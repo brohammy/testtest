@@ -1,6 +1,6 @@
 # Advanced IPA Signer
 
-A production-ready web application for signing iOS IPA files with certificates and advanced modification options.
+A production-ready web application for **real iOS IPA signing** with certificates and advanced modification options. Features actual P12 certificate processing, mobile provision parsing, and IPA modification capabilities.
 
 ## Features
 
