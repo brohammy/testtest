@@ -2,15 +2,16 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import path from "path";
+import multer from "multer";
 import { handleDemo } from "./routes/demo";
-import { 
-  handleFileUpload, 
-  handleMultipleFileUpload, 
-  handleFileDownload, 
-  handleFileInfo, 
+import {
+  handleFileUpload,
+  handleMultipleFileUpload,
+  handleFileDownload,
+  handleFileInfo,
   handleFileDelete,
   uploadSingle,
-  uploadMultiple 
+  uploadMultiple
 } from "./routes/files";
 import {
   handleSigningSubmission,
