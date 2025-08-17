@@ -114,6 +114,18 @@ export default function Index() {
     const interval = setInterval(async () => {
       try {
         const response = await fetch(`/api/sign/progress/${currentJob}`);
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const text = await response.text();
+          throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+        }
+
         const progressData: SigningProgress = await response.json();
 
         setProgress(progressData);
@@ -209,6 +221,17 @@ export default function Index() {
         method: "POST",
         body: formData,
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+      }
 
       const result: SigningResponse = await response.json();
 
