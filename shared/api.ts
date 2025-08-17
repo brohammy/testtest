@@ -17,32 +17,32 @@ export interface DemoResponse {
 
 export interface SigningRequest {
   // IPA source
-  ipaSource: 'file' | 'url';
+  ipaSource: "file" | "url";
   ipaUrl?: string;
-  
+
   // Required certificates
   p12Password?: string;
-  
+
   // Basic signing options
   bundleId?: string;
   bundleName?: string;
   bundleVersion?: string;
   zipLevel?: number;
   entitlements?: string;
-  
+
   // Signing flags
   weak?: boolean;
   adhoc?: boolean;
   debug?: boolean;
   force?: boolean;
-  
+
   // Cyan modification options
   cyanAppName?: string;
   cyanVersion?: string;
   cyanBundleId?: string;
   cyanMinimumOS?: string;
   cyanCompressionLevel?: number;
-  
+
   // Cyan boolean flags
   removeSupportedDevices?: boolean;
   removeWatch?: boolean;
@@ -63,7 +63,7 @@ export interface SigningResponse {
 
 export interface SigningProgress {
   jobId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   progress: number;
   message: string;
   result?: SigningResult;

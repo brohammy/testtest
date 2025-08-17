@@ -1,6 +1,6 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, File, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { Upload, File, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
   accept?: string;
@@ -21,11 +21,11 @@ export function FileUpload({
   placeholder = "Drop files here or click to browse",
   className,
   disabled = false,
-  required = false
+  required = false,
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: DragEvent<HTMLDivElement>) => {
@@ -58,18 +58,20 @@ export function FileUpload({
   };
 
   const handleFiles = (files: File[]) => {
-    setError('');
-    
+    setError("");
+
     // Validate file sizes
-    const oversizedFiles = files.filter(file => file.size > maxSize);
+    const oversizedFiles = files.filter((file) => file.size > maxSize);
     if (oversizedFiles.length > 0) {
-      setError(`Files too large: ${oversizedFiles.map(f => f.name).join(', ')}. Max size: ${Math.round(maxSize / (1024 * 1024))}MB`);
+      setError(
+        `Files too large: ${oversizedFiles.map((f) => f.name).join(", ")}. Max size: ${Math.round(maxSize / (1024 * 1024))}MB`,
+      );
       return;
     }
 
     // Handle single vs multiple files
     const filesToProcess = multiple ? files : files.slice(0, 1);
-    
+
     setSelectedFiles(filesToProcess);
     onFilesSelected(filesToProcess);
   };
@@ -78,10 +80,10 @@ export function FileUpload({
     const newFiles = selectedFiles.filter((_, i) => i !== index);
     setSelectedFiles(newFiles);
     onFilesSelected(newFiles);
-    
+
     // Clear input
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = "";
     }
   };
 
@@ -100,7 +102,7 @@ export function FileUpload({
             ? "border-blue-500 bg-blue-50"
             : "border-gray-300 hover:border-gray-400",
           disabled && "opacity-50 cursor-not-allowed",
-          error && "border-red-300 bg-red-50"
+          error && "border-red-300 bg-red-50",
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -118,15 +120,15 @@ export function FileUpload({
           disabled={disabled}
           required={required}
         />
-        
+
         <div className="flex flex-col items-center justify-center text-center">
-          <Upload className={cn(
-            "w-8 h-8 mb-2",
-            dragActive ? "text-blue-500" : "text-gray-400"
-          )} />
-          <p className="text-sm text-gray-600 mb-1">
-            {placeholder}
-          </p>
+          <Upload
+            className={cn(
+              "w-8 h-8 mb-2",
+              dragActive ? "text-blue-500" : "text-gray-400",
+            )}
+          />
+          <p className="text-sm text-gray-600 mb-1">{placeholder}</p>
           <p className="text-xs text-gray-500">
             Max size: {Math.round(maxSize / (1024 * 1024))}MB
           </p>

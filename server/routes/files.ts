@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { FileUploadResponse, StoredFile } from "@shared/api";
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads');
+const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueName = `${uuidv4()}-${file.originalname}`;
     cb(null, uniqueName);
-  }
+  },
 });
 
 const upload = multer({
@@ -30,48 +30,62 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Allow common file types for IPA signing
     const allowedTypes = [
-      'application/octet-stream', // .ipa, .p12, .mobileprovision
-      'application/x-ios-app', // .ipa
-      'application/x-pkcs12', // .p12
-      'application/x-apple-mobileprovision', // .mobileprovision
-      'text/xml', // .plist, entitlements
-      'application/xml', // .plist, entitlements
-      'image/png', // icons
-      'image/jpeg', // icons
-      'image/jpg', // icons
-      'text/plain', // .cyan files
-      'application/zip' // general archives
+      "application/octet-stream", // .ipa, .p12, .mobileprovision
+      "application/x-ios-app", // .ipa
+      "application/x-pkcs12", // .p12
+      "application/x-apple-mobileprovision", // .mobileprovision
+      "text/xml", // .plist, entitlements
+      "application/xml", // .plist, entitlements
+      "image/png", // icons
+      "image/jpeg", // icons
+      "image/jpg", // icons
+      "text/plain", // .cyan files
+      "application/zip", // general archives
     ];
-    
+
     const allowedExtensions = [
-      '.ipa', '.p12', '.pfx', '.mobileprovision', '.provisionprofile',
-      '.plist', '.entitlements', '.png', '.jpg', '.jpeg', '.cyan',
-      '.dylib', '.framework', '.bundle'
+      ".ipa",
+      ".p12",
+      ".pfx",
+      ".mobileprovision",
+      ".provisionprofile",
+      ".plist",
+      ".entitlements",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".cyan",
+      ".dylib",
+      ".framework",
+      ".bundle",
     ];
-    
+
     const fileExt = path.extname(file.originalname).toLowerCase();
-    
-    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExt)) {
+
+    if (
+      allowedTypes.includes(file.mimetype) ||
+      allowedExtensions.includes(fileExt)
+    ) {
       cb(null, true);
     } else {
       cb(new Error(`File type not allowed: ${file.mimetype} (${fileExt})`));
     }
-  }
+  },
 });
 
 // In-memory storage for file metadata (in production, use a database)
 const fileStore = new Map<string, StoredFile>();
 
-export const uploadSingle = upload.single('file');
-export const uploadMultiple = upload.array('files', 10);
+export const uploadSingle = upload.single("file");
+export const uploadMultiple = upload.array("files", 10);
 
 export const handleFileUpload: RequestHandler = (req, res) => {
   const file = req.file;
-  
+
   if (!file) {
     return res.status(400).json({
       success: false,
-      error: 'No file uploaded'
+      error: "No file uploaded",
     });
   }
 
@@ -83,7 +97,7 @@ export const handleFileUpload: RequestHandler = (req, res) => {
     size: file.size,
     mimetype: file.mimetype,
     uploadedAt: new Date().toISOString(),
-    path: file.path
+    path: file.path,
   };
 
   fileStore.set(fileId, storedFile);
@@ -93,7 +107,7 @@ export const handleFileUpload: RequestHandler = (req, res) => {
     fileId,
     filename: file.originalname,
     size: file.size,
-    uploadedAt: storedFile.uploadedAt
+    uploadedAt: storedFile.uploadedAt,
   };
 
   res.json(response);
@@ -101,11 +115,11 @@ export const handleFileUpload: RequestHandler = (req, res) => {
 
 export const handleMultipleFileUpload: RequestHandler = (req, res) => {
   const files = req.files as Express.Multer.File[];
-  
+
   if (!files || files.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'No files uploaded'
+      error: "No files uploaded",
     });
   }
 
@@ -120,7 +134,7 @@ export const handleMultipleFileUpload: RequestHandler = (req, res) => {
       size: file.size,
       mimetype: file.mimetype,
       uploadedAt: new Date().toISOString(),
-      path: file.path
+      path: file.path,
     };
 
     fileStore.set(fileId, storedFile);
@@ -130,13 +144,13 @@ export const handleMultipleFileUpload: RequestHandler = (req, res) => {
       fileId,
       filename: file.originalname,
       size: file.size,
-      uploadedAt: storedFile.uploadedAt
+      uploadedAt: storedFile.uploadedAt,
     });
   }
 
   res.json({
     success: true,
-    files: uploadedFiles
+    files: uploadedFiles,
   });
 };
 
@@ -147,7 +161,7 @@ export const handleFileDownload: RequestHandler = (req, res) => {
   if (!file || !fs.existsSync(file.path)) {
     return res.status(404).json({
       success: false,
-      error: 'File not found'
+      error: "File not found",
     });
   }
 
@@ -161,7 +175,7 @@ export const handleFileInfo: RequestHandler = (req, res) => {
   if (!file) {
     return res.status(404).json({
       success: false,
-      error: 'File not found'
+      error: "File not found",
     });
   }
 
@@ -172,8 +186,8 @@ export const handleFileInfo: RequestHandler = (req, res) => {
       filename: file.originalName,
       size: file.size,
       mimetype: file.mimetype,
-      uploadedAt: file.uploadedAt
-    }
+      uploadedAt: file.uploadedAt,
+    },
   });
 };
 
@@ -184,7 +198,7 @@ export const handleFileDelete: RequestHandler = (req, res) => {
   if (!file) {
     return res.status(404).json({
       success: false,
-      error: 'File not found'
+      error: "File not found",
     });
   }
 
@@ -194,7 +208,7 @@ export const handleFileDelete: RequestHandler = (req, res) => {
       fs.unlinkSync(file.path);
     }
   } catch (error) {
-    console.warn('Failed to delete file from disk:', error);
+    console.warn("Failed to delete file from disk:", error);
   }
 
   // Remove from store
@@ -202,7 +216,7 @@ export const handleFileDelete: RequestHandler = (req, res) => {
 
   res.json({
     success: true,
-    message: 'File deleted successfully'
+    message: "File deleted successfully",
   });
 };
 

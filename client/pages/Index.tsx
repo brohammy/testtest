@@ -1,68 +1,84 @@
-import { useState, useEffect } from 'react';
-import { FileUpload } from '@/components/FileUpload';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  Download, 
-  Smartphone, 
-  ChevronDown, 
-  ChevronUp, 
-  FileText, 
-  Shield, 
-  Settings, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import { FileUpload } from "@/components/FileUpload";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Download,
+  Smartphone,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Shield,
+  Settings,
+  CheckCircle,
   XCircle,
   AlertCircle,
-  Loader2
-} from 'lucide-react';
-import { SigningRequest, SigningResponse, SigningProgress } from '@shared/api';
+  Loader2,
+} from "lucide-react";
+import { SigningRequest, SigningResponse, SigningProgress } from "@shared/api";
 
 export default function Index() {
   // Form state
-  const [ipaSource, setIpaSource] = useState<'file' | 'url'>('file');
+  const [ipaSource, setIpaSource] = useState<"file" | "url">("file");
   const [ipaFiles, setIpaFiles] = useState<File[]>([]);
-  const [ipaUrl, setIpaUrl] = useState('');
+  const [ipaUrl, setIpaUrl] = useState("");
   const [p12Files, setP12Files] = useState<File[]>([]);
   const [mpFiles, setMpFiles] = useState<File[]>([]);
-  const [p12Password, setP12Password] = useState('');
-  
+  const [p12Password, setP12Password] = useState("");
+
   // Basic signing options
-  const [bundleId, setBundleId] = useState('');
-  const [bundleName, setBundleName] = useState('');
-  const [bundleVersion, setBundleVersion] = useState('');
-  const [zipLevel, setZipLevel] = useState('');
-  const [entitlements, setEntitlements] = useState('');
-  
+  const [bundleId, setBundleId] = useState("");
+  const [bundleName, setBundleName] = useState("");
+  const [bundleVersion, setBundleVersion] = useState("");
+  const [zipLevel, setZipLevel] = useState("");
+  const [entitlements, setEntitlements] = useState("");
+
   // Signing flags
   const [weak, setWeak] = useState(false);
   const [adhoc, setAdhoc] = useState(false);
   const [debug, setDebug] = useState(false);
   const [force, setForce] = useState(false);
-  
+
   // Cyan modification options
   const [cyanFiles, setCyanFiles] = useState<File[]>([]);
   const [tweakFiles, setTweakFiles] = useState<File[]>([]);
   const [iconFiles, setIconFiles] = useState<File[]>([]);
   const [plistFiles, setPlistFiles] = useState<File[]>([]);
   const [entitlementsFiles, setEntitlementsFiles] = useState<File[]>([]);
-  
-  const [cyanAppName, setCyanAppName] = useState('');
-  const [cyanVersion, setCyanVersion] = useState('');
-  const [cyanBundleId, setCyanBundleId] = useState('');
-  const [cyanMinimumOS, setCyanMinimumOS] = useState('');
-  const [cyanCompressionLevel, setCyanCompressionLevel] = useState('');
-  
+
+  const [cyanAppName, setCyanAppName] = useState("");
+  const [cyanVersion, setCyanVersion] = useState("");
+  const [cyanBundleId, setCyanBundleId] = useState("");
+  const [cyanMinimumOS, setCyanMinimumOS] = useState("");
+  const [cyanCompressionLevel, setCyanCompressionLevel] = useState("");
+
   // Cyan boolean flags
   const [removeSupportedDevices, setRemoveSupportedDevices] = useState(false);
   const [removeWatch, setRemoveWatch] = useState(false);
@@ -70,20 +86,22 @@ export default function Index() {
   const [cyanFakeSign, setCyanFakeSign] = useState(false);
   const [thinBinaries, setThinBinaries] = useState(false);
   const [removeExtensions, setRemoveExtensions] = useState(false);
-  const [removeEncryptedExtensions, setRemoveEncryptedExtensions] = useState(false);
+  const [removeEncryptedExtensions, setRemoveEncryptedExtensions] =
+    useState(false);
   const [ignoreEncrypted, setIgnoreEncrypted] = useState(false);
   const [overwrite, setOverwrite] = useState(false);
-  
+
   // UI state
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentJob, setCurrentJob] = useState<string | null>(null);
   const [progress, setProgress] = useState<SigningProgress | null>(null);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   // Validation
   const isFormValid = () => {
-    const hasIpa = ipaSource === 'file' ? ipaFiles.length > 0 : ipaUrl.trim().length > 0;
+    const hasIpa =
+      ipaSource === "file" ? ipaFiles.length > 0 : ipaUrl.trim().length > 0;
     const hasP12 = p12Files.length > 0;
     const hasMp = mpFiles.length > 0;
     return hasIpa && hasP12 && hasMp && !isSubmitting;
@@ -97,19 +115,22 @@ export default function Index() {
       try {
         const response = await fetch(`/api/sign/progress/${currentJob}`);
         const progressData: SigningProgress = await response.json();
-        
+
         setProgress(progressData);
-        
-        if (progressData.status === 'completed' || progressData.status === 'failed') {
+
+        if (
+          progressData.status === "completed" ||
+          progressData.status === "failed"
+        ) {
           setIsSubmitting(false);
           clearInterval(interval);
-          if (progressData.status === 'failed') {
-            setError(progressData.error || 'Signing failed');
+          if (progressData.status === "failed") {
+            setError(progressData.error || "Signing failed");
           }
         }
       } catch (err) {
-        console.error('Failed to check progress:', err);
-        setError('Failed to check progress');
+        console.error("Failed to check progress:", err);
+        setError("Failed to check progress");
         setIsSubmitting(false);
         clearInterval(interval);
       }
@@ -120,81 +141,85 @@ export default function Index() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isFormValid()) return;
-    
+
     setIsSubmitting(true);
-    setError('');
+    setError("");
     setProgress(null);
-    
+
     try {
       const formData = new FormData();
-      
+
       // Add IPA source
-      if (ipaSource === 'file' && ipaFiles[0]) {
-        formData.append('ipa', ipaFiles[0]);
-      } else if (ipaSource === 'url' && ipaUrl.trim()) {
-        formData.append('ipaurl', ipaUrl.trim());
+      if (ipaSource === "file" && ipaFiles[0]) {
+        formData.append("ipa", ipaFiles[0]);
+      } else if (ipaSource === "url" && ipaUrl.trim()) {
+        formData.append("ipaurl", ipaUrl.trim());
       }
-      
+
       // Add required files
-      if (p12Files[0]) formData.append('p12', p12Files[0]);
-      if (mpFiles[0]) formData.append('mp', mpFiles[0]);
-      if (p12Password) formData.append('pass', p12Password);
-      
+      if (p12Files[0]) formData.append("p12", p12Files[0]);
+      if (mpFiles[0]) formData.append("mp", mpFiles[0]);
+      if (p12Password) formData.append("pass", p12Password);
+
       // Add basic options
-      if (bundleId) formData.append('bundleId', bundleId);
-      if (bundleName) formData.append('bundleName', bundleName);
-      if (bundleVersion) formData.append('bundleVersion', bundleVersion);
-      if (zipLevel) formData.append('zipLevel', zipLevel);
-      if (entitlements) formData.append('entitlements', entitlements);
-      
+      if (bundleId) formData.append("bundleId", bundleId);
+      if (bundleName) formData.append("bundleName", bundleName);
+      if (bundleVersion) formData.append("bundleVersion", bundleVersion);
+      if (zipLevel) formData.append("zipLevel", zipLevel);
+      if (entitlements) formData.append("entitlements", entitlements);
+
       // Add flags
-      if (weak) formData.append('weak', 'true');
-      if (adhoc) formData.append('adhoc', 'true');
-      if (debug) formData.append('debug', 'true');
-      if (force) formData.append('force', 'true');
-      
+      if (weak) formData.append("weak", "true");
+      if (adhoc) formData.append("adhoc", "true");
+      if (debug) formData.append("debug", "true");
+      if (force) formData.append("force", "true");
+
       // Add cyan options
-      if (cyanAppName) formData.append('cyanAppName', cyanAppName);
-      if (cyanVersion) formData.append('cyanVersion', cyanVersion);
-      if (cyanBundleId) formData.append('cyanBundleId', cyanBundleId);
-      if (cyanMinimumOS) formData.append('cyanMinimumOS', cyanMinimumOS);
-      if (cyanCompressionLevel) formData.append('cyanCompressionLevel', cyanCompressionLevel);
-      
+      if (cyanAppName) formData.append("cyanAppName", cyanAppName);
+      if (cyanVersion) formData.append("cyanVersion", cyanVersion);
+      if (cyanBundleId) formData.append("cyanBundleId", cyanBundleId);
+      if (cyanMinimumOS) formData.append("cyanMinimumOS", cyanMinimumOS);
+      if (cyanCompressionLevel)
+        formData.append("cyanCompressionLevel", cyanCompressionLevel);
+
       // Add cyan flags
-      if (removeSupportedDevices) formData.append('removeSupportedDevices', 'true');
-      if (removeWatch) formData.append('removeWatch', 'true');
-      if (enableDocuments) formData.append('enableDocuments', 'true');
-      if (cyanFakeSign) formData.append('cyanFakeSign', 'true');
-      if (thinBinaries) formData.append('thinBinaries', 'true');
-      if (removeExtensions) formData.append('removeExtensions', 'true');
-      if (removeEncryptedExtensions) formData.append('removeEncryptedExtensions', 'true');
-      if (ignoreEncrypted) formData.append('ignoreEncrypted', 'true');
-      if (overwrite) formData.append('overwrite', 'true');
-      
+      if (removeSupportedDevices)
+        formData.append("removeSupportedDevices", "true");
+      if (removeWatch) formData.append("removeWatch", "true");
+      if (enableDocuments) formData.append("enableDocuments", "true");
+      if (cyanFakeSign) formData.append("cyanFakeSign", "true");
+      if (thinBinaries) formData.append("thinBinaries", "true");
+      if (removeExtensions) formData.append("removeExtensions", "true");
+      if (removeEncryptedExtensions)
+        formData.append("removeEncryptedExtensions", "true");
+      if (ignoreEncrypted) formData.append("ignoreEncrypted", "true");
+      if (overwrite) formData.append("overwrite", "true");
+
       // Add files
-      cyanFiles.forEach(file => formData.append('cyanFiles', file));
-      tweakFiles.forEach(file => formData.append('tweakFiles', file));
-      if (iconFiles[0]) formData.append('iconFile', iconFiles[0]);
-      if (plistFiles[0]) formData.append('plistFile', plistFiles[0]);
-      if (entitlementsFiles[0]) formData.append('entitlementsFile', entitlementsFiles[0]);
-      
-      const response = await fetch('/api/sign', {
-        method: 'POST',
-        body: formData
+      cyanFiles.forEach((file) => formData.append("cyanFiles", file));
+      tweakFiles.forEach((file) => formData.append("tweakFiles", file));
+      if (iconFiles[0]) formData.append("iconFile", iconFiles[0]);
+      if (plistFiles[0]) formData.append("plistFile", plistFiles[0]);
+      if (entitlementsFiles[0])
+        formData.append("entitlementsFile", entitlementsFiles[0]);
+
+      const response = await fetch("/api/sign", {
+        method: "POST",
+        body: formData,
       });
-      
+
       const result: SigningResponse = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to submit signing job');
+        throw new Error(result.error || "Failed to submit signing job");
       }
-      
+
       setCurrentJob(result.jobId);
     } catch (err) {
-      console.error('Submit error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit job');
+      console.error("Submit error:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit job");
       setIsSubmitting(false);
     }
   };
@@ -202,7 +227,7 @@ export default function Index() {
   const resetForm = () => {
     setCurrentJob(null);
     setProgress(null);
-    setError('');
+    setError("");
     setIsSubmitting(false);
   };
 
@@ -229,12 +254,15 @@ export default function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs value={ipaSource} onValueChange={(v) => setIpaSource(v as 'file' | 'url')}>
+              <Tabs
+                value={ipaSource}
+                onValueChange={(v) => setIpaSource(v as "file" | "url")}
+              >
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="file">Upload File</TabsTrigger>
                   <TabsTrigger value="url">From URL</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="file" className="mt-4">
                   <FileUpload
                     accept=".ipa"
@@ -243,7 +271,7 @@ export default function Index() {
                     required
                   />
                 </TabsContent>
-                
+
                 <TabsContent value="url" className="mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="ipaUrl">IPA URL</Label>
@@ -253,7 +281,7 @@ export default function Index() {
                       value={ipaUrl}
                       onChange={(e) => setIpaUrl(e.target.value)}
                       placeholder="https://example.com/app.ipa"
-                      required={ipaSource === 'url'}
+                      required={ipaSource === "url"}
                     />
                   </div>
                 </TabsContent>
@@ -272,7 +300,9 @@ export default function Index() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-base font-medium">P12 Certificate (.p12, .pfx)</Label>
+                <Label className="text-base font-medium">
+                  P12 Certificate (.p12, .pfx)
+                </Label>
                 <FileUpload
                   accept=".p12,.pfx"
                   onFilesSelected={setP12Files}
@@ -280,9 +310,11 @@ export default function Index() {
                   required
                 />
               </div>
-              
+
               <div>
-                <Label className="text-base font-medium">Mobile Provision (.mobileprovision)</Label>
+                <Label className="text-base font-medium">
+                  Mobile Provision (.mobileprovision)
+                </Label>
                 <FileUpload
                   accept=".mobileprovision,.provisionprofile"
                   onFilesSelected={setMpFiles}
@@ -290,9 +322,11 @@ export default function Index() {
                   required
                 />
               </div>
-              
+
               <div>
-                <Label htmlFor="p12Password">P12 Certificate Password (Optional)</Label>
+                <Label htmlFor="p12Password">
+                  P12 Certificate Password (Optional)
+                </Label>
                 <Input
                   id="p12Password"
                   type="password"
@@ -314,7 +348,11 @@ export default function Index() {
                       <Settings className="w-5 h-5" />
                       Advanced Options
                     </div>
-                    {showAdvanced ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    {showAdvanced ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
                   </CardTitle>
                   <CardDescription>
                     Configure advanced signing and modification options
@@ -322,7 +360,7 @@ export default function Index() {
                 </CardHeader>
               </Card>
             </CollapsibleTrigger>
-            
+
             <CollapsibleContent>
               <div className="space-y-6 mt-4">
                 {/* Basic Signing Options */}
@@ -366,15 +404,19 @@ export default function Index() {
                             <SelectValue placeholder="Default" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="0">0 - No compression</SelectItem>
+                            <SelectItem value="0">
+                              0 - No compression
+                            </SelectItem>
                             <SelectItem value="1">1 - Fastest</SelectItem>
                             <SelectItem value="6">6 - Default</SelectItem>
-                            <SelectItem value="9">9 - Best compression</SelectItem>
+                            <SelectItem value="9">
+                              9 - Best compression
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="entitlements">Custom Entitlements</Label>
                       <Textarea
@@ -385,22 +427,38 @@ export default function Index() {
                         rows={4}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="weak" checked={weak} onCheckedChange={setWeak} />
+                        <Checkbox
+                          id="weak"
+                          checked={weak}
+                          onCheckedChange={setWeak}
+                        />
                         <Label htmlFor="weak">Use weak signing</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="adhoc" checked={adhoc} onCheckedChange={setAdhoc} />
+                        <Checkbox
+                          id="adhoc"
+                          checked={adhoc}
+                          onCheckedChange={setAdhoc}
+                        />
                         <Label htmlFor="adhoc">Ad-hoc signing</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="debug" checked={debug} onCheckedChange={setDebug} />
+                        <Checkbox
+                          id="debug"
+                          checked={debug}
+                          onCheckedChange={setDebug}
+                        />
                         <Label htmlFor="debug">Debug mode</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="force" checked={force} onCheckedChange={setForce} />
+                        <Checkbox
+                          id="force"
+                          checked={force}
+                          onCheckedChange={setForce}
+                        />
                         <Label htmlFor="force">Force overwrite</Label>
                       </div>
                     </div>
@@ -448,7 +506,7 @@ export default function Index() {
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label>Custom Entitlements File</Label>
                       <FileUpload
@@ -456,7 +514,7 @@ export default function Index() {
                         placeholder="Choose entitlements file"
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="cyanAppName">App Name Override</Label>
@@ -486,7 +544,9 @@ export default function Index() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="cyanMinimumOS">Minimum iOS Version</Label>
+                        <Label htmlFor="cyanMinimumOS">
+                          Minimum iOS Version
+                        </Label>
                         <Input
                           id="cyanMinimumOS"
                           value={cyanMinimumOS}
@@ -495,10 +555,15 @@ export default function Index() {
                         />
                       </div>
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="cyanCompressionLevel">Compression Level</Label>
-                      <Select value={cyanCompressionLevel} onValueChange={setCyanCompressionLevel}>
+                      <Label htmlFor="cyanCompressionLevel">
+                        Compression Level
+                      </Label>
+                      <Select
+                        value={cyanCompressionLevel}
+                        onValueChange={setCyanCompressionLevel}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Default" />
                         </SelectTrigger>
@@ -506,81 +571,95 @@ export default function Index() {
                           <SelectItem value="0">0 - No compression</SelectItem>
                           <SelectItem value="1">1 - Fastest</SelectItem>
                           <SelectItem value="6">6 - Default</SelectItem>
-                          <SelectItem value="9">9 - Best compression</SelectItem>
+                          <SelectItem value="9">
+                            9 - Best compression
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="removeSupportedDevices" 
-                          checked={removeSupportedDevices} 
-                          onCheckedChange={setRemoveSupportedDevices} 
+                        <Checkbox
+                          id="removeSupportedDevices"
+                          checked={removeSupportedDevices}
+                          onCheckedChange={setRemoveSupportedDevices}
                         />
-                        <Label htmlFor="removeSupportedDevices">Remove supported devices</Label>
+                        <Label htmlFor="removeSupportedDevices">
+                          Remove supported devices
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="removeWatch" 
-                          checked={removeWatch} 
-                          onCheckedChange={setRemoveWatch} 
+                        <Checkbox
+                          id="removeWatch"
+                          checked={removeWatch}
+                          onCheckedChange={setRemoveWatch}
                         />
-                        <Label htmlFor="removeWatch">Remove Watch support</Label>
+                        <Label htmlFor="removeWatch">
+                          Remove Watch support
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="enableDocuments" 
-                          checked={enableDocuments} 
-                          onCheckedChange={setEnableDocuments} 
+                        <Checkbox
+                          id="enableDocuments"
+                          checked={enableDocuments}
+                          onCheckedChange={setEnableDocuments}
                         />
-                        <Label htmlFor="enableDocuments">Enable document support</Label>
+                        <Label htmlFor="enableDocuments">
+                          Enable document support
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="cyanFakeSign" 
-                          checked={cyanFakeSign} 
-                          onCheckedChange={setCyanFakeSign} 
+                        <Checkbox
+                          id="cyanFakeSign"
+                          checked={cyanFakeSign}
+                          onCheckedChange={setCyanFakeSign}
                         />
                         <Label htmlFor="cyanFakeSign">Fake sign</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="thinBinaries" 
-                          checked={thinBinaries} 
-                          onCheckedChange={setThinBinaries} 
+                        <Checkbox
+                          id="thinBinaries"
+                          checked={thinBinaries}
+                          onCheckedChange={setThinBinaries}
                         />
                         <Label htmlFor="thinBinaries">Thin binaries</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="removeExtensions" 
-                          checked={removeExtensions} 
-                          onCheckedChange={setRemoveExtensions} 
+                        <Checkbox
+                          id="removeExtensions"
+                          checked={removeExtensions}
+                          onCheckedChange={setRemoveExtensions}
                         />
-                        <Label htmlFor="removeExtensions">Remove extensions</Label>
+                        <Label htmlFor="removeExtensions">
+                          Remove extensions
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="removeEncryptedExtensions" 
-                          checked={removeEncryptedExtensions} 
-                          onCheckedChange={setRemoveEncryptedExtensions} 
+                        <Checkbox
+                          id="removeEncryptedExtensions"
+                          checked={removeEncryptedExtensions}
+                          onCheckedChange={setRemoveEncryptedExtensions}
                         />
-                        <Label htmlFor="removeEncryptedExtensions">Remove encrypted extensions</Label>
+                        <Label htmlFor="removeEncryptedExtensions">
+                          Remove encrypted extensions
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="ignoreEncrypted" 
-                          checked={ignoreEncrypted} 
-                          onCheckedChange={setIgnoreEncrypted} 
+                        <Checkbox
+                          id="ignoreEncrypted"
+                          checked={ignoreEncrypted}
+                          onCheckedChange={setIgnoreEncrypted}
                         />
-                        <Label htmlFor="ignoreEncrypted">Ignore encrypted</Label>
+                        <Label htmlFor="ignoreEncrypted">
+                          Ignore encrypted
+                        </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="overwrite" 
-                          checked={overwrite} 
-                          onCheckedChange={setOverwrite} 
+                        <Checkbox
+                          id="overwrite"
+                          checked={overwrite}
+                          onCheckedChange={setOverwrite}
                         />
                         <Label htmlFor="overwrite">Overwrite existing</Label>
                       </div>
@@ -605,7 +684,7 @@ export default function Index() {
                   Processing...
                 </>
               ) : (
-                'Start Signing Process'
+                "Start Signing Process"
               )}
             </Button>
           </div>
@@ -616,9 +695,15 @@ export default function Index() {
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {progress.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                {progress.status === 'failed' && <XCircle className="w-5 h-5 text-red-500" />}
-                {progress.status === 'processing' && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
+                {progress.status === "completed" && (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                )}
+                {progress.status === "failed" && (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+                {progress.status === "processing" && (
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                )}
                 Signing Progress
               </CardTitle>
             </CardHeader>
@@ -630,21 +715,26 @@ export default function Index() {
                 </div>
                 <Progress value={progress.progress} className="w-full" />
               </div>
-              
-              {progress.status === 'completed' && progress.result && (
+
+              {progress.status === "completed" && progress.result && (
                 <div className="space-y-4">
                   <Separator />
                   <div className="space-y-2">
-                    <h4 className="font-semibold text-green-700">✅ Signing Complete!</h4>
+                    <h4 className="font-semibold text-green-700">
+                      ✅ Signing Complete!
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                       <div>
-                        <span className="font-medium">App Name:</span> {progress.result.metadata.bundleName}
+                        <span className="font-medium">App Name:</span>{" "}
+                        {progress.result.metadata.bundleName}
                       </div>
                       <div>
-                        <span className="font-medium">Bundle ID:</span> {progress.result.metadata.bundleId}
+                        <span className="font-medium">Bundle ID:</span>{" "}
+                        {progress.result.metadata.bundleId}
                       </div>
                       <div>
-                        <span className="font-medium">Version:</span> {progress.result.metadata.bundleVersion}
+                        <span className="font-medium">Version:</span>{" "}
+                        {progress.result.metadata.bundleVersion}
                       </div>
                     </div>
                   </div>
@@ -662,7 +752,11 @@ export default function Index() {
                       </a>
                     </Button>
                   </div>
-                  <Button onClick={resetForm} variant="ghost" className="w-full">
+                  <Button
+                    onClick={resetForm}
+                    variant="ghost"
+                    className="w-full"
+                  >
                     Sign Another App
                   </Button>
                 </div>
