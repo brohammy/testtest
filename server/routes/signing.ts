@@ -289,34 +289,24 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
   const { jobId } = req.params;
   const progress = jobStore.get(jobId);
 
+  console.log(`[MANIFEST] Generating manifest for job ${jobId}`);
+
   if (!progress || !progress.result) {
+    console.log(`[MANIFEST] Job ${jobId} not found or no result`);
     return res.status(404).json({
       success: false,
       error: "Signed app not found",
     });
   }
 
-  const manifest = {
-    items: [
-      {
-        assets: [
-          {
-            kind: "software-package",
-            url: `${process.env.BASE_URL || "http://localhost:8080"}${progress.result.signedIpaUrl}`,
-          },
-        ],
-        metadata: {
-          "bundle-identifier": progress.result.metadata.bundleId,
-          "bundle-version": progress.result.metadata.bundleVersion,
-          kind: "software",
-          title: progress.result.metadata.bundleName,
-        },
-      },
-    ],
-  };
+  const baseUrl = process.env.BASE_URL || "http://localhost:8080";
+  const ipaUrl = `${baseUrl}${progress.result.signedIpaUrl}`;
 
-  res.set("Content-Type", "application/xml");
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+  console.log(`[MANIFEST] IPA URL: ${ipaUrl}`);
+  console.log(`[MANIFEST] App: ${progress.result.metadata.bundleName} (${progress.result.metadata.bundleId})`);
+
+  // Generate iOS manifest plist for over-the-air installation
+  const manifestPlist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -329,7 +319,7 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
           <key>kind</key>
           <string>software-package</string>
           <key>url</key>
-          <string>${process.env.BASE_URL || "http://localhost:8080"}${progress.result.signedIpaUrl}</string>
+          <string>${ipaUrl}</string>
         </dict>
       </array>
       <key>metadata</key>
@@ -342,11 +332,17 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
         <string>software</string>
         <key>title</key>
         <string>${progress.result.metadata.bundleName}</string>
+        <key>subtitle</key>
+        <string>Signed with Advanced IPA Signer</string>
       </dict>
     </dict>
   </array>
 </dict>
-</plist>`);
+</plist>`;
+
+  res.set("Content-Type", "application/xml");
+  res.set("Content-Disposition", `attachment; filename="${progress.result.metadata.bundleName}-manifest.plist"`);
+  res.send(manifestPlist);
 };
 
 // Helper function for simulating async operations
