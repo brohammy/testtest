@@ -9,6 +9,7 @@ import {
   SigningProgress,
   SigningResult,
 } from "@shared/api";
+import { IPASigner, SigningJobFiles, SigningJobParams } from "../utils/signer";
 
 // Configure multer for signing uploads
 const storage = multer.diskStorage({
