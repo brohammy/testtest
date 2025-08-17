@@ -56,17 +56,18 @@ export function createServer() {
   // Error handling middleware
   app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error('Server error:', error);
-    
-    if (error instanceof multer.MulterError) {
-      if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          success: false,
-          error: 'File too large. Maximum size is 500MB.'
-        });
-      }
+
+    if (error && error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        error: `Upload error: ${error.message}`
+        error: 'File too large. Maximum size is 500MB.'
+      });
+    }
+
+    if (error && error.message && error.message.includes('File type not allowed')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
       });
     }
 
