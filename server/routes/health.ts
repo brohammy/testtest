@@ -15,7 +15,7 @@ interface HealthStatus {
   message: string;
 }
 
-export const handleHealthCheck: RequestHandler = (req, res) => {
+export const handleHealthCheck: RequestHandler = async (req, res) => {
   const health: HealthStatus = {
     status: 'healthy',
     services: {
