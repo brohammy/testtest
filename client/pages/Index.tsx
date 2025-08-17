@@ -313,9 +313,14 @@ export default function Index() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-4">
             Advanced IPA Signer
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 text-lg mb-3">
             Upload files and configure advanced signing options
           </p>
+          <div className="flex justify-center">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+              ✅ Real IPA Signing Available
+            </Badge>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
