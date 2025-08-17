@@ -68,6 +68,7 @@ A production-ready web application for **real iOS IPA signing** with certificate
 This application performs **actual IPA signing** with the following process:
 
 ### Signing Process
+
 1. **Certificate Processing**: Parse P12 files using Node-Forge to extract certificates and private keys
 2. **Provision Analysis**: Parse mobile provision files to extract entitlements, team IDs, and device lists
 3. **IPA Extraction**: Unzip IPA files and analyze the iOS app bundle structure
@@ -77,6 +78,7 @@ This application performs **actual IPA signing** with the following process:
 7. **Bundle Packaging**: Repackage the modified app into a signed IPA file
 
 ### Real Signing Features
+
 - ✅ **P12 Certificate Parsing**: Full PKCS#12 parsing with password support
 - ✅ **Mobile Provision Processing**: Complete provision parsing and validation
 - ✅ **IPA Manipulation**: Real iOS app bundle modification

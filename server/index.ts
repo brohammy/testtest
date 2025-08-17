@@ -37,16 +37,23 @@ export function createServer() {
   // Serve signed IPAs with proper content type
   app.get("/uploads/jobs/:jobId/output/:filename", (req, res) => {
     const { jobId, filename } = req.params;
-    const filePath = path.join(process.cwd(), "uploads", "jobs", jobId, "output", filename);
+    const filePath = path.join(
+      process.cwd(),
+      "uploads",
+      "jobs",
+      jobId,
+      "output",
+      filename,
+    );
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, error: "File not found" });
     }
 
     // Set proper content type for IPA files
-    if (filename.endsWith('.ipa')) {
-      res.set('Content-Type', 'application/octet-stream');
-      res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    if (filename.endsWith(".ipa")) {
+      res.set("Content-Type", "application/octet-stream");
+      res.set("Content-Disposition", `attachment; filename="${filename}"`);
     }
 
     res.sendFile(filePath);

@@ -1,11 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, Server, Shield, FileText } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  RefreshCw,
+  Server,
+  Shield,
+  FileText,
+} from "lucide-react";
 
 interface HealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   services: {
     fileSystem: boolean;
     certificates: boolean;
@@ -41,29 +55,29 @@ export default function Status() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const fetchStatus = async () => {
     setLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const [healthRes, capRes] = await Promise.all([
-        fetch('/api/health'),
-        fetch('/api/capabilities')
+        fetch("/api/health"),
+        fetch("/api/capabilities"),
       ]);
-      
+
       if (!healthRes.ok || !capRes.ok) {
-        throw new Error('Failed to fetch status');
+        throw new Error("Failed to fetch status");
       }
-      
+
       const healthData = await healthRes.json();
       const capData = await capRes.json();
-      
+
       setHealth(healthData);
       setCapabilities(capData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch status');
+      setError(err instanceof Error ? err.message : "Failed to fetch status");
     } finally {
       setLoading(false);
     }
@@ -75,11 +89,11 @@ export default function Status() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'healthy':
+      case "healthy":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'degraded':
+      case "degraded":
         return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      case 'unhealthy':
+      case "unhealthy":
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
         return <AlertCircle className="w-5 h-5 text-gray-500" />;
@@ -88,14 +102,14 @@ export default function Status() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'degraded':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'unhealthy':
-        return 'bg-red-100 text-red-800 border-red-200';
+      case "healthy":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "degraded":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "unhealthy":
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -211,9 +225,9 @@ export default function Status() {
                   )}
                 </div>
                 <p className="text-sm text-gray-600">
-                  {health.features.realSigning 
-                    ? 'Full P12 certificate processing and IPA signing'
-                    : 'Real signing disabled - dependencies missing'}
+                  {health.features.realSigning
+                    ? "Full P12 certificate processing and IPA signing"
+                    : "Real signing disabled - dependencies missing"}
                 </p>
               </CardContent>
             </Card>
@@ -265,43 +279,73 @@ export default function Status() {
                 <h4 className="font-medium mb-2">Supported File Formats</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-sm font-medium text-gray-700">IPA Files:</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      IPA Files:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {capabilities.supportedFormats.ipa.map(format => (
-                        <Badge key={format} variant="outline" className="text-xs">
+                      {capabilities.supportedFormats.ipa.map((format) => (
+                        <Badge
+                          key={format}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {format}
                         </Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Certificates:</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Certificates:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {capabilities.supportedFormats.certificates.map(format => (
-                        <Badge key={format} variant="outline" className="text-xs">
-                          {format}
-                        </Badge>
-                      ))}
+                      {capabilities.supportedFormats.certificates.map(
+                        (format) => (
+                          <Badge
+                            key={format}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {format}
+                          </Badge>
+                        ),
+                      )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Provisions:</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Provisions:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {capabilities.supportedFormats.provisions.map(format => (
-                        <Badge key={format} variant="outline" className="text-xs">
-                          {format}
-                        </Badge>
-                      ))}
+                      {capabilities.supportedFormats.provisions.map(
+                        (format) => (
+                          <Badge
+                            key={format}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {format}
+                          </Badge>
+                        ),
+                      )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Additional:</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Additional:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {capabilities.supportedFormats.additional.map(format => (
-                        <Badge key={format} variant="outline" className="text-xs">
-                          {format}
-                        </Badge>
-                      ))}
+                      {capabilities.supportedFormats.additional.map(
+                        (format) => (
+                          <Badge
+                            key={format}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {format}
+                          </Badge>
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
@@ -311,7 +355,10 @@ export default function Status() {
                 <h4 className="font-medium mb-2">Real Signing Features</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {capabilities.realSigning.features.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-sm"
+                    >
                       <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
                       <span>{feature}</span>
                     </div>
@@ -329,9 +376,7 @@ export default function Status() {
             Refresh Status
           </Button>
           <Button asChild>
-            <a href="/">
-              Return to Signer
-            </a>
+            <a href="/">Return to Signer</a>
           </Button>
         </div>
       </div>

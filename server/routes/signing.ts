@@ -112,7 +112,11 @@ export const handleSigningProgress: RequestHandler = (req, res) => {
   const { jobId } = req.params;
   const progress = jobStore.get(jobId);
 
-  console.log(`[SIGNING] Progress check for job ${jobId}:`, progress?.status, progress?.progress);
+  console.log(
+    `[SIGNING] Progress check for job ${jobId}:`,
+    progress?.status,
+    progress?.progress,
+  );
 
   if (!progress) {
     console.log(`[SIGNING] Job ${jobId} not found in store`);
@@ -184,10 +188,10 @@ async function processSigningJob(
 
     // Add optional files
     if (files.cyanFiles) {
-      signingFiles.cyanFiles = files.cyanFiles.map(f => f.path);
+      signingFiles.cyanFiles = files.cyanFiles.map((f) => f.path);
     }
     if (files.tweakFiles) {
-      signingFiles.tweakFiles = files.tweakFiles.map(f => f.path);
+      signingFiles.tweakFiles = files.tweakFiles.map((f) => f.path);
     }
     if (files.iconFile && files.iconFile[0]) {
       signingFiles.iconFile = files.iconFile[0].path;
@@ -211,12 +215,12 @@ async function processSigningJob(
       cyanVersion: params.cyanVersion,
       cyanBundleId: params.cyanBundleId,
       cyanMinimumOS: params.cyanMinimumOS,
-      removeExtensions: params.removeExtensions === 'true',
-      removeWatch: params.removeWatch === 'true',
-      thinBinaries: params.thinBinaries === 'true',
-      weak: params.weak === 'true',
-      adhoc: params.adhoc === 'true',
-      debug: params.debug === 'true',
+      removeExtensions: params.removeExtensions === "true",
+      removeWatch: params.removeWatch === "true",
+      thinBinaries: params.thinBinaries === "true",
+      weak: params.weak === "true",
+      adhoc: params.adhoc === "true",
+      debug: params.debug === "true",
     };
 
     // Update progress - processing certificates
@@ -252,16 +256,30 @@ async function processSigningJob(
     jobStore.set(jobId, progress);
 
     // Create download URLs
-    const signedIpaRelativePath = signer.getSignedIPARelativePath(signingResult.signedIpaPath!);
+    const signedIpaRelativePath = signer.getSignedIPARelativePath(
+      signingResult.signedIpaPath!,
+    );
     const downloadUrl = `/uploads/jobs/${jobId}/output/${path.basename(signingResult.signedIpaPath!)}`;
 
     const result: SigningResult = {
       signedIpaUrl: downloadUrl,
       installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || "http://localhost:8080"}/api/manifest/${jobId}`,
       metadata: {
-        bundleName: signingResult.originalInfo?.bundleName || params.cyanAppName || params.bundleName || "Signed App",
-        bundleId: signingResult.originalInfo?.bundleId || params.cyanBundleId || params.bundleId || "com.example.signedapp",
-        bundleVersion: signingResult.originalInfo?.bundleVersion || params.cyanVersion || params.bundleVersion || "1.0.0",
+        bundleName:
+          signingResult.originalInfo?.bundleName ||
+          params.cyanAppName ||
+          params.bundleName ||
+          "Signed App",
+        bundleId:
+          signingResult.originalInfo?.bundleId ||
+          params.cyanBundleId ||
+          params.bundleId ||
+          "com.example.signedapp",
+        bundleVersion:
+          signingResult.originalInfo?.bundleVersion ||
+          params.cyanVersion ||
+          params.bundleVersion ||
+          "1.0.0",
         fileSize: signingResult.signedIpaSize || 0,
         signedAt: new Date().toISOString(),
       },
@@ -275,11 +293,11 @@ async function processSigningJob(
 
     console.log(`[SIGNING] Job ${jobId} completed successfully`);
     console.log(`[SIGNING] Signed IPA: ${downloadUrl}`);
-
   } catch (error) {
     console.error(`[SIGNING] Job ${jobId} failed:`, error);
     progress.status = "failed";
-    progress.error = error instanceof Error ? error.message : "Unknown error occurred";
+    progress.error =
+      error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
     jobStore.set(jobId, progress);
   }
@@ -303,7 +321,9 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
   const ipaUrl = `${baseUrl}${progress.result.signedIpaUrl}`;
 
   console.log(`[MANIFEST] IPA URL: ${ipaUrl}`);
-  console.log(`[MANIFEST] App: ${progress.result.metadata.bundleName} (${progress.result.metadata.bundleId})`);
+  console.log(
+    `[MANIFEST] App: ${progress.result.metadata.bundleName} (${progress.result.metadata.bundleId})`,
+  );
 
   // Generate iOS manifest plist for over-the-air installation
   const manifestPlist = `<?xml version="1.0" encoding="UTF-8"?>
@@ -341,7 +361,10 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
 </plist>`;
 
   res.set("Content-Type", "application/xml");
-  res.set("Content-Disposition", `attachment; filename="${progress.result.metadata.bundleName}-manifest.plist"`);
+  res.set(
+    "Content-Disposition",
+    `attachment; filename="${progress.result.metadata.bundleName}-manifest.plist"`,
+  );
   res.send(manifestPlist);
 };
 

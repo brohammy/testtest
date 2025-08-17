@@ -268,16 +268,24 @@ export default function Index() {
       const formData = new FormData();
 
       // Create mock files
-      const mockIpaFile = new File(['mock ipa content'], 'test.ipa', { type: 'application/octet-stream' });
-      const mockP12File = new File(['mock p12 content'], 'test.p12', { type: 'application/x-pkcs12' });
-      const mockMpFile = new File(['mock provision content'], 'test.mobileprovision', { type: 'application/x-apple-mobileprovision' });
+      const mockIpaFile = new File(["mock ipa content"], "test.ipa", {
+        type: "application/octet-stream",
+      });
+      const mockP12File = new File(["mock p12 content"], "test.p12", {
+        type: "application/x-pkcs12",
+      });
+      const mockMpFile = new File(
+        ["mock provision content"],
+        "test.mobileprovision",
+        { type: "application/x-apple-mobileprovision" },
+      );
 
-      formData.append('ipa', mockIpaFile);
-      formData.append('p12', mockP12File);
-      formData.append('mp', mockMpFile);
-      formData.append('bundleName', 'Test App');
-      formData.append('bundleId', 'com.test.app');
-      formData.append('bundleVersion', '1.0.0');
+      formData.append("ipa", mockIpaFile);
+      formData.append("p12", mockP12File);
+      formData.append("mp", mockMpFile);
+      formData.append("bundleName", "Test App");
+      formData.append("bundleId", "com.test.app");
+      formData.append("bundleVersion", "1.0.0");
 
       const response = await fetch("/api/sign", {
         method: "POST",
@@ -289,10 +297,12 @@ export default function Index() {
         throw new Error(`HTTP ${response.status}: ${text}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
         const text = await response.text();
-        throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+        throw new Error(
+          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+        );
       }
 
       const result: SigningResponse = await response.json();
@@ -317,7 +327,10 @@ export default function Index() {
             Upload files and configure advanced signing options
           </p>
           <div className="flex justify-center gap-4 items-center">
-            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
               ✅ Real IPA Signing Available
             </Badge>
             <Button asChild variant="ghost" size="sm">
