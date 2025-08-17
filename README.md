@@ -6,9 +6,11 @@ A production-ready web application for **real iOS IPA signing** with certificate
 
 ### Core Functionality
 
-- **IPA Signing**: Upload IPA files or provide URLs for remote files
-- **Certificate Management**: Support for P12 certificates and mobile provision files
-- **File Storage**: Secure backend storage for IPA files and certificates
+- **Real IPA Signing**: Actual P12 certificate processing and binary signing
+- **Certificate Management**: Full P12 certificate parsing with private key extraction
+- **Mobile Provision Processing**: Complete provision parsing with entitlements
+- **IPA Manipulation**: Extract, modify, and repackage IPA files
+- **File Storage**: Secure backend storage with organized job structure
 - **Progress Tracking**: Real-time progress updates during signing process
 - **Download & Install**: Direct download and over-the-air installation links
 
