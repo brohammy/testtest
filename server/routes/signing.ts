@@ -157,6 +157,7 @@ async function processSigningJob(
   files: { [fieldname: string]: Express.Multer.File[] },
   params: any,
 ) {
+  console.log(`[SIGNING] Starting processing for job ${jobId}`);
   const progress = jobStore.get(jobId)!;
 
   try {
@@ -165,6 +166,7 @@ async function processSigningJob(
     progress.progress = 10;
     progress.message = "Validating files...";
     jobStore.set(jobId, progress);
+    console.log(`[SIGNING] Job ${jobId} progress: 10%`);
 
     // Simulate file validation (faster for better UX)
     await sleep(500);
