@@ -158,50 +158,111 @@ async function processSigningJob(
   files: { [fieldname: string]: Express.Multer.File[] },
   params: any,
 ) {
-  console.log(`[SIGNING] Starting processing for job ${jobId}`);
+  console.log(`[SIGNING] Starting real signing process for job ${jobId}`);
   const progress = jobStore.get(jobId)!;
 
   try {
-    // Update progress
+    // Initialize progress
     progress.status = "processing";
-    progress.progress = 10;
-    progress.message = "Validating files...";
+    progress.progress = 5;
+    progress.message = "Initializing signing process...";
     jobStore.set(jobId, progress);
-    console.log(`[SIGNING] Job ${jobId} progress: 10%`);
 
-    // Simulate file validation (faster for better UX)
-    await sleep(500);
+    // Create signer instance
+    const signer = new IPASigner(jobId);
 
-    progress.progress = 30;
-    progress.message = "Extracting IPA contents...";
-    jobStore.set(jobId, progress);
-    await sleep(600);
+    // Prepare file paths for signing
+    const signingFiles: SigningJobFiles = {
+      p12File: files.p12[0].path,
+      mpFile: files.mp[0].path,
+    };
 
-    progress.progress = 50;
+    // Add IPA file if uploaded
+    if (files.ipa && files.ipa[0]) {
+      signingFiles.ipaFile = files.ipa[0].path;
+    }
+
+    // Add optional files
+    if (files.cyanFiles) {
+      signingFiles.cyanFiles = files.cyanFiles.map(f => f.path);
+    }
+    if (files.tweakFiles) {
+      signingFiles.tweakFiles = files.tweakFiles.map(f => f.path);
+    }
+    if (files.iconFile && files.iconFile[0]) {
+      signingFiles.iconFile = files.iconFile[0].path;
+    }
+    if (files.plistFile && files.plistFile[0]) {
+      signingFiles.plistFile = files.plistFile[0].path;
+    }
+    if (files.entitlementsFile && files.entitlementsFile[0]) {
+      signingFiles.entitlementsFile = files.entitlementsFile[0].path;
+    }
+
+    // Prepare signing parameters
+    const signingParams: SigningJobParams = {
+      ipaUrl: params.ipaurl,
+      bundleId: params.bundleId,
+      bundleName: params.bundleName,
+      bundleVersion: params.bundleVersion,
+      p12Password: params.pass,
+      entitlements: params.entitlements,
+      cyanAppName: params.cyanAppName,
+      cyanVersion: params.cyanVersion,
+      cyanBundleId: params.cyanBundleId,
+      cyanMinimumOS: params.cyanMinimumOS,
+      removeExtensions: params.removeExtensions === 'true',
+      removeWatch: params.removeWatch === 'true',
+      thinBinaries: params.thinBinaries === 'true',
+      weak: params.weak === 'true',
+      adhoc: params.adhoc === 'true',
+      debug: params.debug === 'true',
+    };
+
+    // Update progress - processing certificates
+    progress.progress = 15;
     progress.message = "Processing certificates...";
     jobStore.set(jobId, progress);
-    await sleep(500);
 
-    progress.progress = 70;
+    // Update progress - extracting IPA
+    progress.progress = 35;
+    progress.message = "Extracting IPA contents...";
+    jobStore.set(jobId, progress);
+
+    // Update progress - applying modifications
+    progress.progress = 55;
     progress.message = "Applying modifications...";
     jobStore.set(jobId, progress);
-    await sleep(600);
 
-    progress.progress = 90;
-    progress.message = "Signing IPA...";
+    // Update progress - signing binaries
+    progress.progress = 75;
+    progress.message = "Signing binaries...";
     jobStore.set(jobId, progress);
-    await sleep(800);
 
-    // Generate mock result
+    // Perform the actual signing
+    const signingResult = await signer.signIPA(signingFiles, signingParams);
+
+    if (!signingResult.success) {
+      throw new Error(signingResult.error || "Signing failed");
+    }
+
+    // Update progress - finalizing
+    progress.progress = 95;
+    progress.message = "Finalizing signed IPA...";
+    jobStore.set(jobId, progress);
+
+    // Create download URLs
+    const signedIpaRelativePath = signer.getSignedIPARelativePath(signingResult.signedIpaPath!);
+    const downloadUrl = `/uploads/jobs/${jobId}/output/${path.basename(signingResult.signedIpaPath!)}`;
+
     const result: SigningResult = {
-      signedIpaUrl: `/api/files/download/signed-${jobId}.ipa`,
+      signedIpaUrl: downloadUrl,
       installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || "http://localhost:8080"}/api/manifest/${jobId}`,
       metadata: {
-        bundleName: params.bundleName || params.cyanAppName || "Signed App",
-        bundleId:
-          params.bundleId || params.cyanBundleId || "com.example.signedapp",
-        bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
-        fileSize: Math.floor(Math.random() * 100000000) + 50000000, // 50-150MB
+        bundleName: signingResult.originalInfo?.bundleName || params.cyanAppName || params.bundleName || "Signed App",
+        bundleId: signingResult.originalInfo?.bundleId || params.cyanBundleId || params.bundleId || "com.example.signedapp",
+        bundleVersion: signingResult.originalInfo?.bundleVersion || params.cyanVersion || params.bundleVersion || "1.0.0",
+        fileSize: signingResult.signedIpaSize || 0,
         signedAt: new Date().toISOString(),
       },
     };
@@ -211,11 +272,14 @@ async function processSigningJob(
     progress.message = "Signing completed successfully";
     progress.result = result;
     jobStore.set(jobId, progress);
+
+    console.log(`[SIGNING] Job ${jobId} completed successfully`);
+    console.log(`[SIGNING] Signed IPA: ${downloadUrl}`);
+
   } catch (error) {
-    console.error("Signing process error:", error);
+    console.error(`[SIGNING] Job ${jobId} failed:`, error);
     progress.status = "failed";
-    progress.error =
-      error instanceof Error ? error.message : "Unknown error occurred";
+    progress.error = error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
     jobStore.set(jobId, progress);
   }
