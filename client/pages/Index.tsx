@@ -745,12 +745,12 @@ export default function Index() {
           </Collapsible>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
             <Button
               type="submit"
               size="lg"
               disabled={!isFormValid()}
-              className="w-full max-w-md h-12 text-lg"
+              className="flex-1 max-w-md h-12 text-lg"
             >
               {isSubmitting ? (
                 <>
@@ -760,6 +760,16 @@ export default function Index() {
               ) : (
                 "Start Signing Process"
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              disabled={isSubmitting}
+              onClick={handleTestSigning}
+              className="h-12 px-6"
+            >
+              Test Signing
             </Button>
           </div>
         </form>
