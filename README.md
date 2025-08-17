@@ -25,8 +25,10 @@ A production-ready web application for **real iOS IPA signing** with certificate
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Shadcn/ui
 - **Backend**: Express.js + Multer for file uploads
-- **File Storage**: Local filesystem with organized job structure
-- **UI Components**: Modern, accessible components with dark/light theme support
+- **IPA Processing**: AdmZip for IPA extraction, Plist parsing for iOS metadata
+- **Certificate Processing**: Node-Forge for P12 certificate and private key handling
+- **File Storage**: Organized job-based filesystem with cleanup
+- **UI Components**: Modern, accessible components with real-time progress tracking
 
 ## API Endpoints
 
