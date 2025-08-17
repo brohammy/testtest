@@ -56,8 +56,12 @@ export const handleSigningSubmission: RequestHandler = async (req, res) => {
     const jobId = uuidv4();
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
+    console.log(`[SIGNING] New job submitted: ${jobId}`);
+    console.log(`[SIGNING] Files received:`, Object.keys(files || {}));
+
     // Validate required files
     if (!files.p12 || !files.mp) {
+      console.log(`[SIGNING] Missing required files for job ${jobId}`);
       return res.status(400).json({
         success: false,
         error: "P12 certificate and mobile provision files are required",
@@ -66,6 +70,7 @@ export const handleSigningSubmission: RequestHandler = async (req, res) => {
 
     // Check IPA source
     if (!files.ipa && !req.body.ipaurl) {
+      console.log(`[SIGNING] No IPA source provided for job ${jobId}`);
       return res.status(400).json({
         success: false,
         error: "IPA file or URL is required",
@@ -81,6 +86,7 @@ export const handleSigningSubmission: RequestHandler = async (req, res) => {
     };
 
     jobStore.set(jobId, progress);
+    console.log(`[SIGNING] Job ${jobId} created and stored`);
 
     // Start processing in background
     processSigningJob(jobId, files, req.body);
