@@ -155,25 +155,30 @@ async function processSigningJob(
     progress.status = "processing";
     progress.progress = 10;
     progress.message = "Validating files...";
+    jobStore.set(jobId, progress);
 
-    // Simulate file validation
-    await sleep(1000);
+    // Simulate file validation (faster for better UX)
+    await sleep(500);
 
     progress.progress = 30;
     progress.message = "Extracting IPA contents...";
-    await sleep(2000);
+    jobStore.set(jobId, progress);
+    await sleep(600);
 
     progress.progress = 50;
     progress.message = "Processing certificates...";
-    await sleep(2000);
+    jobStore.set(jobId, progress);
+    await sleep(500);
 
     progress.progress = 70;
     progress.message = "Applying modifications...";
-    await sleep(2000);
+    jobStore.set(jobId, progress);
+    await sleep(600);
 
     progress.progress = 90;
     progress.message = "Signing IPA...";
-    await sleep(3000);
+    jobStore.set(jobId, progress);
+    await sleep(800);
 
     // Generate mock result
     const result: SigningResult = {
@@ -193,12 +198,14 @@ async function processSigningJob(
     progress.progress = 100;
     progress.message = "Signing completed successfully";
     progress.result = result;
+    jobStore.set(jobId, progress);
   } catch (error) {
     console.error("Signing process error:", error);
     progress.status = "failed";
     progress.error =
       error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
+    jobStore.set(jobId, progress);
   }
 }
 
