@@ -39,9 +39,10 @@ export const handleHealthCheck: RequestHandler = (req, res) => {
 
     // Test certificate processing
     try {
-      const forge = require('node-forge');
+      await import('node-forge');
       health.services.certificates = true;
     } catch (error) {
+      console.log('node-forge import error:', error);
       health.services.certificates = false;
       health.features.realSigning = false;
       health.status = 'degraded';
@@ -50,10 +51,11 @@ export const handleHealthCheck: RequestHandler = (req, res) => {
 
     // Test IPA processing
     try {
-      const AdmZip = require('adm-zip');
-      const plist = require('plist');
+      await import('adm-zip');
+      await import('plist');
       health.services.signing = true;
     } catch (error) {
+      console.log('IPA processing import error:', error);
       health.services.signing = false;
       health.features.realSigning = false;
       health.status = 'degraded';
