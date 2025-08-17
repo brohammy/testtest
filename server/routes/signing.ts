@@ -178,7 +178,10 @@ async function processSigningJob(
     let actualIpaPath = ipaPath;
     if (!ipaPath && params.ipaurl) {
       progress.message = "Downloading IPA from URL...";
-      actualIpaPath = await downloadFile(params.ipaurl, path.join(jobDir, "downloaded.ipa"));
+      actualIpaPath = await downloadFile(
+        params.ipaurl,
+        path.join(jobDir, "downloaded.ipa"),
+      );
     }
 
     if (!actualIpaPath) {
@@ -190,11 +193,7 @@ async function processSigningJob(
 
     // Prepare zsign command
     const outputPath = path.join(jobDir, "signed.ipa");
-    const zsignArgs = [
-      "-k", p12Path,
-      "-m", mpPath,
-      "-o", outputPath,
-    ];
+    const zsignArgs = ["-k", p12Path, "-m", mpPath, "-o", outputPath];
 
     // Add password if provided
     if (params.pass) {
@@ -268,10 +267,11 @@ async function processSigningJob(
     // Generate result
     const result: SigningResult = {
       signedIpaUrl: `/uploads/jobs/${jobId}/signed.ipa`,
-      installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://localhost:8080`}/api/manifest/${jobId}`,
+      installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || `${process.env.NODE_ENV === "production" ? "https" : "http"}://localhost:8080`}/api/manifest/${jobId}`,
       metadata: {
         bundleName: params.bundleName || params.cyanAppName || "Signed App",
-        bundleId: params.bundleId || params.cyanBundleId || "com.example.signedapp",
+        bundleId:
+          params.bundleId || params.cyanBundleId || "com.example.signedapp",
         bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
         fileSize,
         signedAt: new Date().toISOString(),
@@ -282,16 +282,19 @@ async function processSigningJob(
     progress.progress = 100;
     progress.message = "Signing completed successfully";
     progress.result = result;
-
   } catch (error) {
     console.error("Signing process error:", error);
     progress.status = "failed";
-    progress.error = error instanceof Error ? error.message : "Unknown error occurred";
+    progress.error =
+      error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
   }
 }
 
-async function executeZsign(args: string[], progress: SigningProgress): Promise<void> {
+async function executeZsign(
+  args: string[],
+  progress: SigningProgress,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const zsignProcess = spawn("zsign", args);
     let stdout = "";
@@ -300,7 +303,7 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
     zsignProcess.stdout.on("data", (data) => {
       stdout += data.toString();
       console.log("zsign stdout:", data.toString());
-      
+
       // Update progress based on zsign output
       const output = data.toString();
       if (output.includes("Parsing")) {
@@ -324,7 +327,9 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`zsign failed with code ${code}: ${stderr || stdout}`));
+        reject(
+          new Error(`zsign failed with code ${code}: ${stderr || stdout}`),
+        );
       }
     });
 
@@ -336,32 +341,34 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
 
 async function downloadFile(url: string, outputPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const https = require('https');
-    const http = require('http');
-    
-    const protocol = url.startsWith('https:') ? https : http;
+    const https = require("https");
+    const http = require("http");
+
+    const protocol = url.startsWith("https:") ? https : http;
     const file = fs.createWriteStream(outputPath);
-    
-    protocol.get(url, (response: any) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download file: ${response.statusCode}`));
-        return;
-      }
-      
-      response.pipe(file);
-      
-      file.on('finish', () => {
-        file.close();
-        resolve(outputPath);
-      });
-      
-      file.on('error', (error: Error) => {
-        fs.unlink(outputPath, () => {}); // Delete the file on error
+
+    protocol
+      .get(url, (response: any) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download file: ${response.statusCode}`));
+          return;
+        }
+
+        response.pipe(file);
+
+        file.on("finish", () => {
+          file.close();
+          resolve(outputPath);
+        });
+
+        file.on("error", (error: Error) => {
+          fs.unlink(outputPath, () => {}); // Delete the file on error
+          reject(error);
+        });
+      })
+      .on("error", (error: Error) => {
         reject(error);
       });
-    }).on('error', (error: Error) => {
-      reject(error);
-    });
   });
 }
 
@@ -376,7 +383,8 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
     });
   }
 
-  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const baseUrl =
+    process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
 
   res.set("Content-Type", "application/xml");
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
