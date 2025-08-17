@@ -79,7 +79,7 @@ export const handleHealthCheck: RequestHandler = async (req, res) => {
   res.status(statusCode).json(health);
 };
 
-export const handleSigningCapabilities: RequestHandler = (req, res) => {
+export const handleSigningCapabilities: RequestHandler = async (req, res) => {
   const capabilities = {
     realSigning: {
       available: true,
@@ -119,9 +119,10 @@ export const handleSigningCapabilities: RequestHandler = (req, res) => {
 
   try {
     // Check if real signing dependencies are available
-    require('node-forge');
-    require('adm-zip');
-    require('plist');
+    await import('node-forge');
+    await import('adm-zip');
+    await import('plist');
+    capabilities.realSigning.available = true;
   } catch (error) {
     capabilities.realSigning.available = false;
     capabilities.realSigning.features.push('⚠️ Dependencies missing - install node-forge, adm-zip, plist');
