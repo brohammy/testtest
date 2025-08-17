@@ -120,10 +120,12 @@ export default function Index() {
           throw new Error(`HTTP ${response.status}: ${text}`);
         }
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
+        const contentType = response.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
           const text = await response.text();
-          throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+          throw new Error(
+            `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+          );
         }
 
         const progressData: SigningProgress = await response.json();
@@ -227,10 +229,12 @@ export default function Index() {
         throw new Error(`HTTP ${response.status}: ${text}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
         const text = await response.text();
-        throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+        throw new Error(
+          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+        );
       }
 
       const result: SigningResponse = await response.json();
