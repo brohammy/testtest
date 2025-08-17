@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { handleDemo } from "./routes/demo";
+import { handleHealthCheck, handleSigningCapabilities } from "./routes/health";
 import {
   handleFileUpload,
   handleMultipleFileUpload,
