@@ -111,7 +111,10 @@ export const handleSigningProgress: RequestHandler = (req, res) => {
   const { jobId } = req.params;
   const progress = jobStore.get(jobId);
 
+  console.log(`[SIGNING] Progress check for job ${jobId}:`, progress?.status, progress?.progress);
+
   if (!progress) {
+    console.log(`[SIGNING] Job ${jobId} not found in store`);
     return res.status(404).json({
       success: false,
       error: "Job not found",
