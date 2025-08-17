@@ -32,6 +32,24 @@ export function createServer() {
   // Serve static files for downloads
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+  // Serve signed IPAs with proper content type
+  app.get("/uploads/jobs/:jobId/output/:filename", (req, res) => {
+    const { jobId, filename } = req.params;
+    const filePath = path.join(process.cwd(), "uploads", "jobs", jobId, "output", filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, error: "File not found" });
+    }
+
+    // Set proper content type for IPA files
+    if (filename.endsWith('.ipa')) {
+      res.set('Content-Type', 'application/octet-stream');
+      res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    }
+
+    res.sendFile(filePath);
+  });
+
   // Health check routes
   app.get("/api/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
