@@ -114,6 +114,20 @@ export default function Index() {
     const interval = setInterval(async () => {
       try {
         const response = await fetch(`/api/sign/progress/${currentJob}`);
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
+          const text = await response.text();
+          throw new Error(
+            `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+          );
+        }
+
         const progressData: SigningProgress = await response.json();
 
         setProgress(progressData);
@@ -210,6 +224,19 @@ export default function Index() {
         body: formData,
       });
 
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+        );
+      }
+
       const result: SigningResponse = await response.json();
 
       if (!response.ok) {
@@ -231,6 +258,63 @@ export default function Index() {
     setIsSubmitting(false);
   };
 
+  const handleTestSigning = async () => {
+    setIsSubmitting(true);
+    setError("");
+    setProgress(null);
+
+    try {
+      // Create a FormData with mock files for testing
+      const formData = new FormData();
+
+      // Create mock files
+      const mockIpaFile = new File(["mock ipa content"], "test.ipa", {
+        type: "application/octet-stream",
+      });
+      const mockP12File = new File(["mock p12 content"], "test.p12", {
+        type: "application/x-pkcs12",
+      });
+      const mockMpFile = new File(
+        ["mock provision content"],
+        "test.mobileprovision",
+        { type: "application/x-apple-mobileprovision" },
+      );
+
+      formData.append("ipa", mockIpaFile);
+      formData.append("p12", mockP12File);
+      formData.append("mp", mockMpFile);
+      formData.append("bundleName", "Test App");
+      formData.append("bundleId", "com.test.app");
+      formData.append("bundleVersion", "1.0.0");
+
+      const response = await fetch("/api/sign", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
+        );
+      }
+
+      const result: SigningResponse = await response.json();
+
+      setCurrentJob(result.jobId);
+    } catch (err) {
+      console.error("Test signing error:", err);
+      setError(err instanceof Error ? err.message : "Test signing failed");
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -239,9 +323,22 @@ export default function Index() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-4">
             Advanced IPA Signer
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 text-lg mb-3">
             Upload files and configure advanced signing options
           </p>
+          <div className="flex justify-center gap-4 items-center">
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
+              ✅ Real IPA Signing Available
+            </Badge>
+            <Button asChild variant="ghost" size="sm">
+              <a href="/status" className="text-blue-600 hover:text-blue-800">
+                View Status
+              </a>
+            </Button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -671,12 +768,12 @@ export default function Index() {
           </Collapsible>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
             <Button
               type="submit"
               size="lg"
               disabled={!isFormValid()}
-              className="w-full max-w-md h-12 text-lg"
+              className="flex-1 max-w-md h-12 text-lg"
             >
               {isSubmitting ? (
                 <>
@@ -686,6 +783,16 @@ export default function Index() {
               ) : (
                 "Start Signing Process"
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              disabled={isSubmitting}
+              onClick={handleTestSigning}
+              className="h-12 px-6"
+            >
+              Test Signing
             </Button>
           </div>
         </form>
