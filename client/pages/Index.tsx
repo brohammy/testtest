@@ -316,10 +316,15 @@ export default function Index() {
           <p className="text-gray-600 text-lg mb-3">
             Upload files and configure advanced signing options
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4 items-center">
             <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
               ✅ Real IPA Signing Available
             </Badge>
+            <Button asChild variant="ghost" size="sm">
+              <a href="/status" className="text-blue-600 hover:text-blue-800">
+                View Status
+              </a>
+            </Button>
           </div>
         </div>
 
