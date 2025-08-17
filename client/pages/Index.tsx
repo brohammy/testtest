@@ -258,6 +258,53 @@ export default function Index() {
     setIsSubmitting(false);
   };
 
+  const handleTestSigning = async () => {
+    setIsSubmitting(true);
+    setError("");
+    setProgress(null);
+
+    try {
+      // Create a FormData with mock files for testing
+      const formData = new FormData();
+
+      // Create mock files
+      const mockIpaFile = new File(['mock ipa content'], 'test.ipa', { type: 'application/octet-stream' });
+      const mockP12File = new File(['mock p12 content'], 'test.p12', { type: 'application/x-pkcs12' });
+      const mockMpFile = new File(['mock provision content'], 'test.mobileprovision', { type: 'application/x-apple-mobileprovision' });
+
+      formData.append('ipa', mockIpaFile);
+      formData.append('p12', mockP12File);
+      formData.append('mp', mockMpFile);
+      formData.append('bundleName', 'Test App');
+      formData.append('bundleId', 'com.test.app');
+      formData.append('bundleVersion', '1.0.0');
+
+      const response = await fetch("/api/sign", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Expected JSON but received: ${contentType || 'unknown'} - ${text.substring(0, 100)}`);
+      }
+
+      const result: SigningResponse = await response.json();
+
+      setCurrentJob(result.jobId);
+    } catch (err) {
+      console.error("Test signing error:", err);
+      setError(err instanceof Error ? err.message : "Test signing failed");
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
