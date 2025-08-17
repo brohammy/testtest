@@ -59,6 +59,8 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+  app.get("/api/health", handleHealthCheck);
+  app.get("/api/capabilities", handleSigningCapabilities);
 
   // File management routes
   app.post("/api/files/upload", uploadSingle, handleFileUpload);
