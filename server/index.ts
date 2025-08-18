@@ -86,6 +86,7 @@ export function createServer() {
   app.get("/api/sign/progress/:jobId", handleSigningProgress);
   app.delete("/api/sign/:jobId", handleSigningCancel);
   app.get("/api/manifest/:jobId", handleManifestDownload);
+  app.get("/api/zsign-check", checkZsignInstallation);
 
   // Error handling middleware
   app.use(
