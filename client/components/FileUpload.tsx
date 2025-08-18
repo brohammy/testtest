@@ -97,12 +97,12 @@ export function FileUpload({
     <div className={cn("space-y-3", className)}>
       <div
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
+          "relative border-2 border-dashed rounded-xl p-6 transition-all duration-200 cursor-pointer",
           dragActive
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-gray-400",
+            ? "border-purple-400 bg-purple-500/20 scale-105"
+            : "border-white/30 hover:border-purple-400/70 hover:bg-white/5",
           disabled && "opacity-50 cursor-not-allowed",
-          error && "border-red-300 bg-red-50",
+          error && "border-red-400 bg-red-500/20",
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
