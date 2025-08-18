@@ -1,84 +1,73 @@
-import { useState, useEffect } from "react";
-import { FileUpload } from "@/components/FileUpload";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Download,
-  Smartphone,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Shield,
-  Settings,
-  CheckCircle,
+import { useState, useEffect } from 'react';
+import { FileUpload } from '@/components/FileUpload';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  Download, 
+  Smartphone, 
+  ChevronDown, 
+  ChevronUp, 
+  FileText, 
+  Shield, 
+  Settings, 
+  CheckCircle, 
   XCircle,
   AlertCircle,
   Loader2,
-} from "lucide-react";
-import { SigningRequest, SigningResponse, SigningProgress } from "@shared/api";
+  Zap,
+  Star,
+  Lock,
+  Cpu,
+  Sparkles
+} from 'lucide-react';
+import { SigningRequest, SigningResponse, SigningProgress } from '@shared/api';
 
 export default function Index() {
   // Form state
-  const [ipaSource, setIpaSource] = useState<"file" | "url">("file");
+  const [ipaSource, setIpaSource] = useState<'file' | 'url'>('file');
   const [ipaFiles, setIpaFiles] = useState<File[]>([]);
-  const [ipaUrl, setIpaUrl] = useState("");
+  const [ipaUrl, setIpaUrl] = useState('');
   const [p12Files, setP12Files] = useState<File[]>([]);
   const [mpFiles, setMpFiles] = useState<File[]>([]);
-  const [p12Password, setP12Password] = useState("");
-
+  const [p12Password, setP12Password] = useState('');
+  
   // Basic signing options
-  const [bundleId, setBundleId] = useState("");
-  const [bundleName, setBundleName] = useState("");
-  const [bundleVersion, setBundleVersion] = useState("");
-  const [zipLevel, setZipLevel] = useState("");
-  const [entitlements, setEntitlements] = useState("");
-
+  const [bundleId, setBundleId] = useState('');
+  const [bundleName, setBundleName] = useState('');
+  const [bundleVersion, setBundleVersion] = useState('');
+  const [zipLevel, setZipLevel] = useState('');
+  const [entitlements, setEntitlements] = useState('');
+  
   // Signing flags
   const [weak, setWeak] = useState(false);
   const [adhoc, setAdhoc] = useState(false);
   const [debug, setDebug] = useState(false);
   const [force, setForce] = useState(false);
-
+  
   // Cyan modification options
   const [cyanFiles, setCyanFiles] = useState<File[]>([]);
   const [tweakFiles, setTweakFiles] = useState<File[]>([]);
   const [iconFiles, setIconFiles] = useState<File[]>([]);
   const [plistFiles, setPlistFiles] = useState<File[]>([]);
   const [entitlementsFiles, setEntitlementsFiles] = useState<File[]>([]);
-
-  const [cyanAppName, setCyanAppName] = useState("");
-  const [cyanVersion, setCyanVersion] = useState("");
-  const [cyanBundleId, setCyanBundleId] = useState("");
-  const [cyanMinimumOS, setCyanMinimumOS] = useState("");
-  const [cyanCompressionLevel, setCyanCompressionLevel] = useState("");
-
+  
+  const [cyanAppName, setCyanAppName] = useState('');
+  const [cyanVersion, setCyanVersion] = useState('');
+  const [cyanBundleId, setCyanBundleId] = useState('');
+  const [cyanMinimumOS, setCyanMinimumOS] = useState('');
+  const [cyanCompressionLevel, setCyanCompressionLevel] = useState('');
+  
   // Cyan boolean flags
   const [removeSupportedDevices, setRemoveSupportedDevices] = useState(false);
   const [removeWatch, setRemoveWatch] = useState(false);
@@ -86,22 +75,20 @@ export default function Index() {
   const [cyanFakeSign, setCyanFakeSign] = useState(false);
   const [thinBinaries, setThinBinaries] = useState(false);
   const [removeExtensions, setRemoveExtensions] = useState(false);
-  const [removeEncryptedExtensions, setRemoveEncryptedExtensions] =
-    useState(false);
+  const [removeEncryptedExtensions, setRemoveEncryptedExtensions] = useState(false);
   const [ignoreEncrypted, setIgnoreEncrypted] = useState(false);
   const [overwrite, setOverwrite] = useState(false);
-
+  
   // UI state
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentJob, setCurrentJob] = useState<string | null>(null);
   const [progress, setProgress] = useState<SigningProgress | null>(null);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
 
   // Validation
   const isFormValid = () => {
-    const hasIpa =
-      ipaSource === "file" ? ipaFiles.length > 0 : ipaUrl.trim().length > 0;
+    const hasIpa = ipaSource === 'file' ? ipaFiles.length > 0 : ipaUrl.trim().length > 0;
     const hasP12 = p12Files.length > 0;
     const hasMp = mpFiles.length > 0;
     return hasIpa && hasP12 && hasMp && !isSubmitting;
@@ -114,37 +101,20 @@ export default function Index() {
     const interval = setInterval(async () => {
       try {
         const response = await fetch(`/api/sign/progress/${currentJob}`);
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`HTTP ${response.status}: ${text}`);
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-          const text = await response.text();
-          throw new Error(
-            `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
-          );
-        }
-
         const progressData: SigningProgress = await response.json();
-
+        
         setProgress(progressData);
-
-        if (
-          progressData.status === "completed" ||
-          progressData.status === "failed"
-        ) {
+        
+        if (progressData.status === 'completed' || progressData.status === 'failed') {
           setIsSubmitting(false);
           clearInterval(interval);
-          if (progressData.status === "failed") {
-            setError(progressData.error || "Signing failed");
+          if (progressData.status === 'failed') {
+            setError(progressData.error || 'Signing failed');
           }
         }
       } catch (err) {
-        console.error("Failed to check progress:", err);
-        setError("Failed to check progress");
+        console.error('Failed to check progress:', err);
+        setError('Failed to check progress');
         setIsSubmitting(false);
         clearInterval(interval);
       }
@@ -155,98 +125,81 @@ export default function Index() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!isFormValid()) return;
-
+    
     setIsSubmitting(true);
-    setError("");
+    setError('');
     setProgress(null);
-
+    
     try {
       const formData = new FormData();
-
+      
       // Add IPA source
-      if (ipaSource === "file" && ipaFiles[0]) {
-        formData.append("ipa", ipaFiles[0]);
-      } else if (ipaSource === "url" && ipaUrl.trim()) {
-        formData.append("ipaurl", ipaUrl.trim());
+      if (ipaSource === 'file' && ipaFiles[0]) {
+        formData.append('ipa', ipaFiles[0]);
+      } else if (ipaSource === 'url' && ipaUrl.trim()) {
+        formData.append('ipaurl', ipaUrl.trim());
       }
-
+      
       // Add required files
-      if (p12Files[0]) formData.append("p12", p12Files[0]);
-      if (mpFiles[0]) formData.append("mp", mpFiles[0]);
-      if (p12Password) formData.append("pass", p12Password);
-
+      if (p12Files[0]) formData.append('p12', p12Files[0]);
+      if (mpFiles[0]) formData.append('mp', mpFiles[0]);
+      if (p12Password) formData.append('pass', p12Password);
+      
       // Add basic options
-      if (bundleId) formData.append("bundleId", bundleId);
-      if (bundleName) formData.append("bundleName", bundleName);
-      if (bundleVersion) formData.append("bundleVersion", bundleVersion);
-      if (zipLevel) formData.append("zipLevel", zipLevel);
-      if (entitlements) formData.append("entitlements", entitlements);
-
+      if (bundleId) formData.append('bundleId', bundleId);
+      if (bundleName) formData.append('bundleName', bundleName);
+      if (bundleVersion) formData.append('bundleVersion', bundleVersion);
+      if (zipLevel) formData.append('zipLevel', zipLevel);
+      if (entitlements) formData.append('entitlements', entitlements);
+      
       // Add flags
-      if (weak) formData.append("weak", "true");
-      if (adhoc) formData.append("adhoc", "true");
-      if (debug) formData.append("debug", "true");
-      if (force) formData.append("force", "true");
-
+      if (weak) formData.append('weak', 'true');
+      if (adhoc) formData.append('adhoc', 'true');
+      if (debug) formData.append('debug', 'true');
+      if (force) formData.append('force', 'true');
+      
       // Add cyan options
-      if (cyanAppName) formData.append("cyanAppName", cyanAppName);
-      if (cyanVersion) formData.append("cyanVersion", cyanVersion);
-      if (cyanBundleId) formData.append("cyanBundleId", cyanBundleId);
-      if (cyanMinimumOS) formData.append("cyanMinimumOS", cyanMinimumOS);
-      if (cyanCompressionLevel)
-        formData.append("cyanCompressionLevel", cyanCompressionLevel);
-
+      if (cyanAppName) formData.append('cyanAppName', cyanAppName);
+      if (cyanVersion) formData.append('cyanVersion', cyanVersion);
+      if (cyanBundleId) formData.append('cyanBundleId', cyanBundleId);
+      if (cyanMinimumOS) formData.append('cyanMinimumOS', cyanMinimumOS);
+      if (cyanCompressionLevel) formData.append('cyanCompressionLevel', cyanCompressionLevel);
+      
       // Add cyan flags
-      if (removeSupportedDevices)
-        formData.append("removeSupportedDevices", "true");
-      if (removeWatch) formData.append("removeWatch", "true");
-      if (enableDocuments) formData.append("enableDocuments", "true");
-      if (cyanFakeSign) formData.append("cyanFakeSign", "true");
-      if (thinBinaries) formData.append("thinBinaries", "true");
-      if (removeExtensions) formData.append("removeExtensions", "true");
-      if (removeEncryptedExtensions)
-        formData.append("removeEncryptedExtensions", "true");
-      if (ignoreEncrypted) formData.append("ignoreEncrypted", "true");
-      if (overwrite) formData.append("overwrite", "true");
-
+      if (removeSupportedDevices) formData.append('removeSupportedDevices', 'true');
+      if (removeWatch) formData.append('removeWatch', 'true');
+      if (enableDocuments) formData.append('enableDocuments', 'true');
+      if (cyanFakeSign) formData.append('cyanFakeSign', 'true');
+      if (thinBinaries) formData.append('thinBinaries', 'true');
+      if (removeExtensions) formData.append('removeExtensions', 'true');
+      if (removeEncryptedExtensions) formData.append('removeEncryptedExtensions', 'true');
+      if (ignoreEncrypted) formData.append('ignoreEncrypted', 'true');
+      if (overwrite) formData.append('overwrite', 'true');
+      
       // Add files
-      cyanFiles.forEach((file) => formData.append("cyanFiles", file));
-      tweakFiles.forEach((file) => formData.append("tweakFiles", file));
-      if (iconFiles[0]) formData.append("iconFile", iconFiles[0]);
-      if (plistFiles[0]) formData.append("plistFile", plistFiles[0]);
-      if (entitlementsFiles[0])
-        formData.append("entitlementsFile", entitlementsFiles[0]);
-
-      const response = await fetch("/api/sign", {
-        method: "POST",
-        body: formData,
+      cyanFiles.forEach(file => formData.append('cyanFiles', file));
+      tweakFiles.forEach(file => formData.append('tweakFiles', file));
+      if (iconFiles[0]) formData.append('iconFile', iconFiles[0]);
+      if (plistFiles[0]) formData.append('plistFile', plistFiles[0]);
+      if (entitlementsFiles[0]) formData.append('entitlementsFile', entitlementsFiles[0]);
+      
+      const response = await fetch('/api/sign', {
+        method: 'POST',
+        body: formData
       });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(
-          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
-        );
-      }
-
+      
       const result: SigningResponse = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(result.error || "Failed to submit signing job");
+        throw new Error(result.error || 'Failed to submit signing job');
       }
-
+      
       setCurrentJob(result.jobId);
     } catch (err) {
-      console.error("Submit error:", err);
-      setError(err instanceof Error ? err.message : "Failed to submit job");
+      console.error('Submit error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to submit job');
       setIsSubmitting(false);
     }
   };
@@ -254,631 +207,404 @@ export default function Index() {
   const resetForm = () => {
     setCurrentJob(null);
     setProgress(null);
-    setError("");
+    setError('');
     setIsSubmitting(false);
   };
 
-  const handleTestSigning = async () => {
-    setIsSubmitting(true);
-    setError("");
-    setProgress(null);
-
-    try {
-      // Create a FormData with mock files for testing
-      const formData = new FormData();
-
-      // Create mock files
-      const mockIpaFile = new File(["mock ipa content"], "test.ipa", {
-        type: "application/octet-stream",
-      });
-      const mockP12File = new File(["mock p12 content"], "test.p12", {
-        type: "application/x-pkcs12",
-      });
-      const mockMpFile = new File(
-        ["mock provision content"],
-        "test.mobileprovision",
-        { type: "application/x-apple-mobileprovision" },
-      );
-
-      formData.append("ipa", mockIpaFile);
-      formData.append("p12", mockP12File);
-      formData.append("mp", mockMpFile);
-      formData.append("bundleName", "Test App");
-      formData.append("bundleId", "com.test.app");
-      formData.append("bundleVersion", "1.0.0");
-
-      const response = await fetch("/api/sign", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(
-          `Expected JSON but received: ${contentType || "unknown"} - ${text.substring(0, 100)}`,
-        );
-      }
-
-      const result: SigningResponse = await response.json();
-
-      setCurrentJob(result.jobId);
-    } catch (err) {
-      console.error("Test signing error:", err);
-      setError(err instanceof Error ? err.message : "Test signing failed");
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:50px_50px]" />
+      
+      <div className="relative">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-4">
-            Advanced IPA Signer
-          </h1>
-          <p className="text-gray-600 text-lg mb-3">
-            Upload files and configure advanced signing options
-          </p>
-          <div className="flex justify-center gap-4 items-center">
-            <Badge
-              variant="secondary"
-              className="bg-green-100 text-green-800 border-green-200"
-            >
-              ✅ Real IPA Signing Available
-            </Badge>
-            <Button asChild variant="ghost" size="sm">
-              <a href="/status" className="text-blue-600 hover:text-blue-800">
-                View Status
-              </a>
-            </Button>
+        <div className="border-b border-white/10 bg-black/20 backdrop-blur-xl">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-white">
+                    IPA Forge
+                  </h1>
+                  <p className="text-purple-200 text-sm">Professional iOS App Signing</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  zsign Ready
+                </Badge>
+                <Button variant="ghost" size="sm" className="text-purple-200 hover:text-white hover:bg-white/10">
+                  <a href="/status">Status</a>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* IPA Source Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                IPA Source
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs
-                value={ipaSource}
-                onValueChange={(v) => setIpaSource(v as "file" | "url")}
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="file">Upload File</TabsTrigger>
-                  <TabsTrigger value="url">From URL</TabsTrigger>
-                </TabsList>
+        <div className="container mx-auto px-6 py-8 max-w-6xl">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* IPA Source */}
+              <Card className="border-white/20 bg-white/5 backdrop-blur-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <FileText className="w-5 h-5 text-purple-400" />
+                    Application Source
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={ipaSource} onValueChange={(v) => setIpaSource(v as 'file' | 'url')}>
+                    <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                      <TabsTrigger value="file" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                        Upload File
+                      </TabsTrigger>
+                      <TabsTrigger value="url" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                        Remote URL
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="file" className="mt-4">
+                      <FileUpload
+                        accept=".ipa"
+                        onFilesSelected={setIpaFiles}
+                        placeholder="Drop your IPA file here or click to browse"
+                        className="border-dashed border-purple-400/50 bg-purple-500/10 hover:bg-purple-500/20"
+                        required
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="url" className="mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="ipaUrl" className="text-gray-300">IPA Download URL</Label>
+                        <Input
+                          id="ipaUrl"
+                          type="url"
+                          value={ipaUrl}
+                          onChange={(e) => setIpaUrl(e.target.value)}
+                          placeholder="https://example.com/app.ipa"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                          required={ipaSource === 'url'}
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="file" className="mt-4">
-                  <FileUpload
-                    accept=".ipa"
-                    onFilesSelected={setIpaFiles}
-                    placeholder="Choose IPA file to sign"
-                    required
-                  />
-                </TabsContent>
-
-                <TabsContent value="url" className="mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ipaUrl">IPA URL</Label>
-                    <Input
-                      id="ipaUrl"
-                      type="url"
-                      value={ipaUrl}
-                      onChange={(e) => setIpaUrl(e.target.value)}
-                      placeholder="https://example.com/app.ipa"
-                      required={ipaSource === "url"}
+              {/* Certificates */}
+              <Card className="border-white/20 bg-white/5 backdrop-blur-xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Lock className="w-5 h-5 text-pink-400" />
+                    Signing Certificates
+                    <Badge variant="destructive">Required</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="text-gray-300 text-sm font-medium">P12 Certificate</Label>
+                    <FileUpload
+                      accept=".p12,.pfx"
+                      onFilesSelected={setP12Files}
+                      placeholder="Drop your P12 certificate here"
+                      className="border-dashed border-pink-400/50 bg-pink-500/10 hover:bg-pink-500/20"
+                      required
                     />
                   </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Required Certificates */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Signing Certificates
-                <Badge variant="destructive">Required</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-base font-medium">
-                  P12 Certificate (.p12, .pfx)
-                </Label>
-                <FileUpload
-                  accept=".p12,.pfx"
-                  onFilesSelected={setP12Files}
-                  placeholder="Drop P12 certificate file here or click to browse"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label className="text-base font-medium">
-                  Mobile Provision (.mobileprovision)
-                </Label>
-                <FileUpload
-                  accept=".mobileprovision,.provisionprofile"
-                  onFilesSelected={setMpFiles}
-                  placeholder="Drop mobile provision file here or click to browse"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="p12Password">
-                  P12 Certificate Password (Optional)
-                </Label>
-                <Input
-                  id="p12Password"
-                  type="password"
-                  value={p12Password}
-                  onChange={(e) => setP12Password(e.target.value)}
-                  placeholder="Enter password if required"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Advanced Options */}
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-            <CollapsibleTrigger asChild>
-              <Card className="cursor-pointer hover:bg-gray-50 transition-colors">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      Advanced Options
-                    </div>
-                    {showAdvanced ? (
-                      <ChevronUp className="w-5 h-5" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" />
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Configure advanced signing and modification options
-                  </CardDescription>
-                </CardHeader>
+                  
+                  <div>
+                    <Label className="text-gray-300 text-sm font-medium">Mobile Provision</Label>
+                    <FileUpload
+                      accept=".mobileprovision,.provisionprofile"
+                      onFilesSelected={setMpFiles}
+                      placeholder="Drop your mobile provision file here"
+                      className="border-dashed border-pink-400/50 bg-pink-500/10 hover:bg-pink-500/20"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="p12Password" className="text-gray-300">Certificate Password</Label>
+                    <Input
+                      id="p12Password"
+                      type="password"
+                      value={p12Password}
+                      onChange={(e) => setP12Password(e.target.value)}
+                      placeholder="Optional password"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    />
+                  </div>
+                </CardContent>
               </Card>
-            </CollapsibleTrigger>
 
-            <CollapsibleContent>
-              <div className="space-y-6 mt-4">
-                {/* Basic Signing Options */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Basic Signing Options</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="bundleId">Bundle ID</Label>
-                        <Input
-                          id="bundleId"
-                          value={bundleId}
-                          onChange={(e) => setBundleId(e.target.value)}
-                          placeholder="com.example.app"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="bundleName">App Name</Label>
-                        <Input
-                          id="bundleName"
-                          value={bundleName}
-                          onChange={(e) => setBundleName(e.target.value)}
-                          placeholder="My App"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="bundleVersion">Version</Label>
-                        <Input
-                          id="bundleVersion"
-                          value={bundleVersion}
-                          onChange={(e) => setBundleVersion(e.target.value)}
-                          placeholder="1.0.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="zipLevel">ZIP Compression Level</Label>
-                        <Select value={zipLevel} onValueChange={setZipLevel}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Default" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">
-                              0 - No compression
-                            </SelectItem>
-                            <SelectItem value="1">1 - Fastest</SelectItem>
-                            <SelectItem value="6">6 - Default</SelectItem>
-                            <SelectItem value="9">
-                              9 - Best compression
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+              {/* Advanced Options */}
+              <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+                <CollapsibleTrigger asChild>
+                  <Card className="border-white/20 bg-white/5 backdrop-blur-xl cursor-pointer hover:bg-white/10 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between text-white">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-5 h-5 text-cyan-400" />
+                          Advanced Configuration
+                        </div>
+                        {showAdvanced ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </CardTitle>
+                      <CardDescription className="text-gray-400">
+                        Fine-tune signing parameters and inject modifications
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    {/* Basic Options */}
+                    <Card className="border-white/20 bg-white/5 backdrop-blur-xl">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-white text-lg">Basic Parameters</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="bundleId" className="text-gray-300 text-xs">Bundle ID</Label>
+                            <Input
+                              id="bundleId"
+                              value={bundleId}
+                              onChange={(e) => setBundleId(e.target.value)}
+                              placeholder="com.example.app"
+                              className="bg-white/10 border-white/20 text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="bundleName" className="text-gray-300 text-xs">App Name</Label>
+                            <Input
+                              id="bundleName"
+                              value={bundleName}
+                              onChange={(e) => setBundleName(e.target.value)}
+                              placeholder="My App"
+                              className="bg-white/10 border-white/20 text-white text-sm"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="bundleVersion" className="text-gray-300 text-xs">Version</Label>
+                            <Input
+                              id="bundleVersion"
+                              value={bundleVersion}
+                              onChange={(e) => setBundleVersion(e.target.value)}
+                              placeholder="1.0.0"
+                              className="bg-white/10 border-white/20 text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="zipLevel" className="text-gray-300 text-xs">Compression</Label>
+                            <Select value={zipLevel} onValueChange={setZipLevel}>
+                              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                <SelectValue placeholder="Default" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-800 border-white/20">
+                                <SelectItem value="0">No compression</SelectItem>
+                                <SelectItem value="6">Default</SelectItem>
+                                <SelectItem value="9">Maximum</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="weak" checked={weak} onCheckedChange={setWeak} />
+                            <Label htmlFor="weak" className="text-gray-300 text-xs">Weak signing</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="adhoc" checked={adhoc} onCheckedChange={setAdhoc} />
+                            <Label htmlFor="adhoc" className="text-gray-300 text-xs">Ad-hoc</Label>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    <div>
-                      <Label htmlFor="entitlements">Custom Entitlements</Label>
-                      <Textarea
-                        id="entitlements"
-                        value={entitlements}
-                        onChange={(e) => setEntitlements(e.target.value)}
-                        placeholder="Custom entitlements content"
-                        rows={4}
-                      />
-                    </div>
+                    {/* Modification Options */}
+                    <Card className="border-white/20 bg-white/5 backdrop-blur-xl">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-white text-lg">Modifications</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label className="text-gray-300 text-xs">Tweak Files</Label>
+                          <FileUpload
+                            multiple
+                            onFilesSelected={setTweakFiles}
+                            placeholder="Drop tweaks here"
+                            className="border-dashed border-cyan-400/50 bg-cyan-500/10"
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-gray-300 text-xs">Custom Icon</Label>
+                            <FileUpload
+                              accept="image/*"
+                              onFilesSelected={setIconFiles}
+                              placeholder="Icon file"
+                              className="border-dashed border-yellow-400/50 bg-yellow-500/10"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-300 text-xs">Plist File</Label>
+                            <FileUpload
+                              accept=".plist"
+                              onFilesSelected={setPlistFiles}
+                              placeholder="Plist file"
+                              className="border-dashed border-green-400/50 bg-green-500/10"
+                            />
+                          </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="weak"
-                          checked={weak}
-                          onCheckedChange={setWeak}
-                        />
-                        <Label htmlFor="weak">Use weak signing</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="adhoc"
-                          checked={adhoc}
-                          onCheckedChange={setAdhoc}
-                        />
-                        <Label htmlFor="adhoc">Ad-hoc signing</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="debug"
-                          checked={debug}
-                          onCheckedChange={setDebug}
-                        />
-                        <Label htmlFor="debug">Debug mode</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="force"
-                          checked={force}
-                          onCheckedChange={setForce}
-                        />
-                        <Label htmlFor="force">Force overwrite</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Cyan Modification Options */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>IPA Modification (Cyan)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Cyan Files (.cyan)</Label>
-                        <FileUpload
-                          accept=".cyan"
-                          multiple
-                          onFilesSelected={setCyanFiles}
-                          placeholder="Choose cyan files (optional)"
-                        />
-                      </div>
-                      <div>
-                        <Label>Tweak/Bundle Files</Label>
-                        <FileUpload
-                          multiple
-                          onFilesSelected={setTweakFiles}
-                          placeholder="Choose tweak files (optional)"
-                        />
-                      </div>
-                      <div>
-                        <Label>App Icon</Label>
-                        <FileUpload
-                          accept="image/*"
-                          onFilesSelected={setIconFiles}
-                          placeholder="Choose icon"
-                        />
-                      </div>
-                      <div>
-                        <Label>Custom Plist</Label>
-                        <FileUpload
-                          accept=".plist"
-                          onFilesSelected={setPlistFiles}
-                          placeholder="Choose plist"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label>Custom Entitlements File</Label>
-                      <FileUpload
-                        onFilesSelected={setEntitlementsFiles}
-                        placeholder="Choose entitlements file"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="cyanAppName">App Name Override</Label>
-                        <Input
-                          id="cyanAppName"
-                          value={cyanAppName}
-                          onChange={(e) => setCyanAppName(e.target.value)}
-                          placeholder="Custom app name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cyanVersion">Version Override</Label>
-                        <Input
-                          id="cyanVersion"
-                          value={cyanVersion}
-                          onChange={(e) => setCyanVersion(e.target.value)}
-                          placeholder="1.0.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cyanBundleId">Bundle ID Override</Label>
-                        <Input
-                          id="cyanBundleId"
-                          value={cyanBundleId}
-                          onChange={(e) => setCyanBundleId(e.target.value)}
-                          placeholder="com.example.app"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cyanMinimumOS">
-                          Minimum iOS Version
-                        </Label>
-                        <Input
-                          id="cyanMinimumOS"
-                          value={cyanMinimumOS}
-                          onChange={(e) => setCyanMinimumOS(e.target.value)}
-                          placeholder="13.0"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="cyanCompressionLevel">
-                        Compression Level
-                      </Label>
-                      <Select
-                        value={cyanCompressionLevel}
-                        onValueChange={setCyanCompressionLevel}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Default" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">0 - No compression</SelectItem>
-                          <SelectItem value="1">1 - Fastest</SelectItem>
-                          <SelectItem value="6">6 - Default</SelectItem>
-                          <SelectItem value="9">
-                            9 - Best compression
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="removeSupportedDevices"
-                          checked={removeSupportedDevices}
-                          onCheckedChange={setRemoveSupportedDevices}
-                        />
-                        <Label htmlFor="removeSupportedDevices">
-                          Remove supported devices
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="removeWatch"
-                          checked={removeWatch}
-                          onCheckedChange={setRemoveWatch}
-                        />
-                        <Label htmlFor="removeWatch">
-                          Remove Watch support
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="enableDocuments"
-                          checked={enableDocuments}
-                          onCheckedChange={setEnableDocuments}
-                        />
-                        <Label htmlFor="enableDocuments">
-                          Enable document support
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="cyanFakeSign"
-                          checked={cyanFakeSign}
-                          onCheckedChange={setCyanFakeSign}
-                        />
-                        <Label htmlFor="cyanFakeSign">Fake sign</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="thinBinaries"
-                          checked={thinBinaries}
-                          onCheckedChange={setThinBinaries}
-                        />
-                        <Label htmlFor="thinBinaries">Thin binaries</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="removeExtensions"
-                          checked={removeExtensions}
-                          onCheckedChange={setRemoveExtensions}
-                        />
-                        <Label htmlFor="removeExtensions">
-                          Remove extensions
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="removeEncryptedExtensions"
-                          checked={removeEncryptedExtensions}
-                          onCheckedChange={setRemoveEncryptedExtensions}
-                        />
-                        <Label htmlFor="removeEncryptedExtensions">
-                          Remove encrypted extensions
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="ignoreEncrypted"
-                          checked={ignoreEncrypted}
-                          onCheckedChange={setIgnoreEncrypted}
-                        />
-                        <Label htmlFor="ignoreEncrypted">
-                          Ignore encrypted
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="overwrite"
-                          checked={overwrite}
-                          onCheckedChange={setOverwrite}
-                        />
-                        <Label htmlFor="overwrite">Overwrite existing</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Submit Button */}
-          <div className="flex justify-center gap-4">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={!isFormValid()}
-              className="flex-1 max-w-md h-12 text-lg"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Start Signing Process"
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              disabled={isSubmitting}
-              onClick={handleTestSigning}
-              className="h-12 px-6"
-            >
-              Test Signing
-            </Button>
-          </div>
-        </form>
-
-        {/* Progress Display */}
-        {progress && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {progress.status === "completed" && (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                )}
-                {progress.status === "failed" && (
-                  <XCircle className="w-5 h-5 text-red-500" />
-                )}
-                {progress.status === "processing" && (
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                )}
-                Signing Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{progress.message}</span>
-                  <span>{progress.progress}%</span>
-                </div>
-                <Progress value={progress.progress} className="w-full" />
-              </div>
-
-              {progress.status === "completed" && progress.result && (
-                <div className="space-y-4">
-                  <Separator />
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-green-700">
-                      ✅ Signing Complete!
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <span className="font-medium">App Name:</span>{" "}
-                        {progress.result.metadata.bundleName}
-                      </div>
-                      <div>
-                        <span className="font-medium">Bundle ID:</span>{" "}
-                        {progress.result.metadata.bundleId}
-                      </div>
-                      <div>
-                        <span className="font-medium">Version:</span>{" "}
-                        {progress.result.metadata.bundleVersion}
-                      </div>
-                    </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="removeWatch" checked={removeWatch} onCheckedChange={setRemoveWatch} />
+                            <Label htmlFor="removeWatch" className="text-gray-300 text-xs">Remove Watch</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="thinBinaries" checked={thinBinaries} onCheckedChange={setThinBinaries} />
+                            <Label htmlFor="thinBinaries" className="text-gray-300 text-xs">Thin binaries</Label>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="flex gap-3">
-                    <Button asChild className="flex-1">
-                      <a href={progress.result.signedIpaUrl} download>
-                        <Download className="w-4 h-4 mr-2" />
-                        Download IPA
-                      </a>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Action Panel */}
+              <Card className="border-white/20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl sticky top-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                    Sign Application
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Button
+                      type="submit"
+                      disabled={!isFormValid()}
+                      className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Star className="w-4 h-4 mr-2" />
+                          Start Signing
+                        </>
+                      )}
                     </Button>
-                    <Button asChild variant="outline" className="flex-1">
-                      <a href={progress.result.installLink}>
-                        <Smartphone className="w-4 h-4 mr-2" />
-                        Install on Device
-                      </a>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-white/20 text-gray-300 hover:bg-white/10"
+                    >
+                      Test Configuration
                     </Button>
                   </div>
-                  <Button
-                    onClick={resetForm}
-                    variant="ghost"
-                    className="w-full"
-                  >
-                    Sign Another App
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  
+                  <Separator className="bg-white/20" />
+                  
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <p>• Supports IPA files up to 500MB</p>
+                    <p>• Real zsign integration</p>
+                    <p>• Over-the-air installation</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Error Display */}
-        {error && (
-          <Alert className="mt-6" variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+              {/* Status Card */}
+              {(progress || error) && (
+                <Card className="border-white/20 bg-white/5 backdrop-blur-xl">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      {progress?.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-400" />}
+                      {progress?.status === 'failed' && <XCircle className="w-5 h-5 text-red-400" />}
+                      {progress?.status === 'processing' && <Loader2 className="w-5 h-5 animate-spin text-blue-400" />}
+                      {error && <AlertCircle className="w-5 h-5 text-red-400" />}
+                      Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {progress && (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm text-gray-300">
+                            <span>{progress.message}</span>
+                            <span>{progress.progress}%</span>
+                          </div>
+                          <Progress 
+                            value={progress.progress} 
+                            className="h-2 bg-white/20" 
+                          />
+                        </div>
+                        
+                        {progress.status === 'completed' && progress.result && (
+                          <>
+                            <Separator className="bg-white/20" />
+                            <div className="space-y-3">
+                              <div className="text-sm text-gray-300">
+                                <p className="font-medium text-green-400">✅ Signing Complete!</p>
+                                <p>App: {progress.result.metadata.bundleName}</p>
+                                <p>Bundle ID: {progress.result.metadata.bundleId}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                                  <a href={progress.result.signedIpaUrl} download>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download IPA
+                                  </a>
+                                </Button>
+                                <Button asChild variant="outline" className="w-full border-white/20 text-gray-300">
+                                  <a href={progress.result.installLink}>
+                                    <Smartphone className="w-4 h-4 mr-2" />
+                                    Install on Device
+                                  </a>
+                                </Button>
+                              </div>
+                              <Button onClick={resetForm} variant="ghost" className="w-full text-gray-400 hover:text-white">
+                                Sign Another App
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                    
+                    {error && (
+                      <Alert className="bg-red-500/20 border-red-500/50">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-red-200">{error}</AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
