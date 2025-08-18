@@ -1,31 +1,13 @@
 import { useState, useEffect } from 'react';
-import { FileUpload } from '@/components/FileUpload';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Download, 
-  Smartphone, 
-  CheckCircle, 
-  XCircle,
-  AlertCircle,
-  Loader2
-} from 'lucide-react';
 import { SigningRequest, SigningResponse, SigningProgress } from '@shared/api';
 
 export default function Index() {
   // Form state
   const [ipaSource, setIpaSource] = useState<'file' | 'url'>('file');
-  const [ipaFiles, setIpaFiles] = useState<File[]>([]);
+  const [ipaFile, setIpaFile] = useState<File | null>(null);
   const [ipaUrl, setIpaUrl] = useState('');
-  const [p12Files, setP12Files] = useState<File[]>([]);
-  const [mpFiles, setMpFiles] = useState<File[]>([]);
+  const [p12File, setP12File] = useState<File | null>(null);
+  const [mpFile, setMpFile] = useState<File | null>(null);
   const [p12Password, setP12Password] = useState('');
   
   // Basic signing options
@@ -60,9 +42,9 @@ export default function Index() {
 
   // Validation
   const isFormValid = () => {
-    const hasIpa = ipaSource === 'file' ? ipaFiles.length > 0 : ipaUrl.trim().length > 0;
-    const hasP12 = p12Files.length > 0;
-    const hasMp = mpFiles.length > 0;
+    const hasIpa = ipaSource === 'file' ? ipaFile !== null : ipaUrl.trim().length > 0;
+    const hasP12 = p12File !== null;
+    const hasMp = mpFile !== null;
     return hasIpa && hasP12 && hasMp && !isSubmitting;
   };
 
@@ -108,15 +90,15 @@ export default function Index() {
       const formData = new FormData();
       
       // Add IPA source
-      if (ipaSource === 'file' && ipaFiles[0]) {
-        formData.append('ipa', ipaFiles[0]);
+      if (ipaSource === 'file' && ipaFile) {
+        formData.append('ipa', ipaFile);
       } else if (ipaSource === 'url' && ipaUrl.trim()) {
         formData.append('ipaurl', ipaUrl.trim());
       }
       
       // Add required files
-      if (p12Files[0]) formData.append('p12', p12Files[0]);
-      if (mpFiles[0]) formData.append('mp', mpFiles[0]);
+      if (p12File) formData.append('p12', p12File);
+      if (mpFile) formData.append('mp', mpFile);
       if (p12Password) formData.append('pass', p12Password);
       
       // Add basic options
@@ -176,10 +158,71 @@ export default function Index() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'ipa' | 'p12' | 'mp') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const input = e.target;
+      input.classList.add('has-file');
+      const display = input.parentElement?.querySelector('.file-input-display');
+      const fileText = display?.querySelector('.file-text');
+      if (fileText) {
+        fileText.innerHTML = `<span class="file-name">${file.name}</span><span class="file-size"> (${formatFileSize(file.size)})</span>`;
+      }
+      
+      switch (fileType) {
+        case 'ipa':
+          setIpaFile(file);
+          break;
+        case 'p12':
+          setP12File(file);
+          break;
+        case 'mp':
+          setMpFile(file);
+          break;
+      }
+    }
+  };
+
+  const handleDragEvents = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent, fileType: 'ipa' | 'p12' | 'mp') => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      const display = e.currentTarget;
+      display.classList.remove('drag-over');
+      
+      // Simulate file input change
+      const fileText = display.querySelector('.file-text');
+      if (fileText) {
+        fileText.innerHTML = `<span class="file-name">${file.name}</span><span class="file-size"> (${formatFileSize(file.size)})</span>`;
+      }
+      
+      switch (fileType) {
+        case 'ipa':
+          setIpaFile(file);
+          break;
+        case 'p12':
+          setP12File(file);
+          break;
+        case 'mp':
+          setMpFile(file);
+          break;
+      }
+    }
+  };
+
   return (
     <div style={{
-      minHeight: '100vh',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
       padding: '20px',
       color: '#2d3748'
     }}>
@@ -219,7 +262,7 @@ export default function Index() {
 
         {/* Main Content */}
         <div style={{ padding: '40px' }}>
-          <form onSubmit={handleSubmit}>
+          <form id="signingForm" onSubmit={handleSubmit}>
             {/* IPA Source Selection */}
             <div style={{
               marginBottom: '35px',
@@ -246,113 +289,186 @@ export default function Index() {
                 IPA Source
               </h3>
               
-              <Tabs value={ipaSource} onValueChange={(v) => setIpaSource(v as 'file' | 'url')}>
-                <TabsList style={{
-                  display: 'flex',
-                  marginBottom: '25px',
-                  background: '#f1f5f9',
-                  borderRadius: '12px',
-                  padding: '6px',
-                  border: '2px solid #e2e8f0'
-                }}>
-                  <TabsTrigger 
-                    value="file" 
-                    style={{
-                      flex: '1',
-                      padding: '12px 20px',
-                      background: ipaSource === 'file' ? 'white' : 'transparent',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      color: ipaSource === 'file' ? '#667eea' : '#718096',
-                      boxShadow: ipaSource === 'file' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none',
-                      transform: ipaSource === 'file' ? 'translateY(-1px)' : 'none'
-                    }}
-                  >
-                    Upload File
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="url"
-                    style={{
-                      flex: '1',
-                      padding: '12px 20px',
-                      background: ipaSource === 'url' ? 'white' : 'transparent',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      color: ipaSource === 'url' ? '#667eea' : '#718096',
-                      boxShadow: ipaSource === 'url' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none',
-                      transform: ipaSource === 'url' ? 'translateY(-1px)' : 'none'
-                    }}
-                  >
-                    From URL
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="file">
-                  <div style={{ marginBottom: '25px' }}>
-                    <Label style={{
-                      display: 'block',
-                      fontWeight: '600',
-                      color: '#2d3748',
-                      marginBottom: '10px',
-                      fontSize: '1rem'
-                    }}>
-                      IPA File (.ipa) *
-                    </Label>
-                    <FileUpload
-                      accept=".ipa"
-                      onFilesSelected={setIpaFiles}
-                      placeholder="Choose or drag & drop IPA file (max 5GB)"
-                      required
-                    />
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="url">
-                  <div style={{ marginBottom: '25px' }}>
-                    <Label htmlFor="ipaUrl" style={{
-                      display: 'block',
-                      fontWeight: '600',
-                      color: '#2d3748',
-                      marginBottom: '10px',
-                      fontSize: '1rem'
-                    }}>
-                      IPA URL *
-                    </Label>
-                    <Input
-                      id="ipaUrl"
-                      type="url"
-                      value={ipaUrl}
-                      onChange={(e) => setIpaUrl(e.target.value)}
-                      placeholder="https://example.com/app.ipa"
+              <div style={{
+                display: 'flex',
+                marginBottom: '25px',
+                background: '#f1f5f9',
+                borderRadius: '12px',
+                padding: '6px',
+                border: '2px solid #e2e8f0'
+              }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIpaSource('file')}
+                  style={{
+                    flex: '1',
+                    padding: '12px 20px',
+                    background: ipaSource === 'file' ? 'white' : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: ipaSource === 'file' ? '#667eea' : '#718096',
+                    boxShadow: ipaSource === 'file' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none',
+                    transform: ipaSource === 'file' ? 'translateY(-1px)' : 'none'
+                  }}
+                >
+                  Upload File
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIpaSource('url')}
+                  style={{
+                    flex: '1',
+                    padding: '12px 20px',
+                    background: ipaSource === 'url' ? 'white' : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: ipaSource === 'url' ? '#667eea' : '#718096',
+                    boxShadow: ipaSource === 'url' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none',
+                    transform: ipaSource === 'url' ? 'translateY(-1px)' : 'none'
+                  }}
+                >
+                  From URL
+                </button>
+              </div>
+              
+              <div style={{ display: ipaSource === 'file' ? 'block' : 'none' }}>
+                <div style={{ marginBottom: '25px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#2d3748',
+                    marginBottom: '10px',
+                    fontSize: '1rem'
+                  }}>
+                    IPA File (.ipa) *
+                  </label>
+                  <div style={{ position: 'relative', display: 'block', cursor: 'pointer' }}>
+                    <input 
+                      type="file" 
+                      id="ipaFile" 
+                      accept=".ipa" 
+                      onChange={(e) => handleFileInput(e, 'ipa')}
                       style={{
+                        position: 'absolute',
+                        opacity: '0',
                         width: '100%',
-                        padding: '14px 18px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        background: '#fff',
-                        transition: 'all 0.3s ease',
-                        outline: 'none',
-                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
+                        height: '100%',
+                        cursor: 'pointer'
                       }}
-                      required={ipaSource === 'url'}
                     />
-                    <small style={{
-                      color: '#718096',
-                      marginTop: '8px',
-                      display: 'block'
-                    }}>
-                      Direct link to .ipa file with proper CORS headers
-                    </small>
+                    <div 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '20px 24px',
+                        border: ipaFile ? '2px solid #667eea' : '3px dashed #cbd5e0',
+                        borderRadius: '16px',
+                        background: ipaFile ? '#eef2ff' : '#f7fafc',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        minHeight: '80px'
+                      }}
+                      onDragEnter={handleDragEvents}
+                      onDragLeave={handleDragEvents}
+                      onDragOver={handleDragEvents}
+                      onDrop={(e) => handleDrop(e, 'ipa')}
+                      onMouseEnter={(e) => {
+                        if (!ipaFile) {
+                          e.currentTarget.style.borderColor = '#667eea';
+                          e.currentTarget.style.background = '#edf2f7';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.15)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!ipaFile) {
+                          e.currentTarget.style.borderColor = '#cbd5e0';
+                          e.currentTarget.style.background = '#f7fafc';
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                        <svg style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          marginRight: '16px', 
+                          fill: ipaFile ? '#667eea' : '#718096' 
+                        }} viewBox="0 0 24 24">
+                          <path d="M12,2A3,3 0 0,1 15,5V7H16A2,2 0 0,1 18,9V19A2,2 0 0,1 16,21H8A2,2 0 0,1 6,19V9A2,2 0 0,1 8,7H9V5A3,3 0 0,1 12,2M12,4A1,1 0 0,0 11,5V7H13V5A1,1 0 0,0 12,4Z" />
+                        </svg>
+                        <span className="file-text" style={{
+                          color: ipaFile ? '#2d3748' : '#718096',
+                          fontSize: '1rem',
+                          fontWeight: ipaFile ? '600' : '500'
+                        }}>
+                          {ipaFile ? ipaFile.name : 'Choose or drag & drop IPA file (max 5GB)'}
+                        </span>
+                      </div>
+                      <svg style={{ width: '24px', height: '24px', fill: '#a0aec0' }} viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,12L16,16H13.5V19H10.5V16H8L12,12Z" />
+                      </svg>
+                    </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
+              
+              <div style={{ display: ipaSource === 'url' ? 'block' : 'none' }}>
+                <div style={{ marginBottom: '25px' }}>
+                  <label htmlFor="ipaUrl" style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#2d3748',
+                    marginBottom: '10px',
+                    fontSize: '1rem'
+                  }}>
+                    IPA URL *
+                  </label>
+                  <input 
+                    type="url" 
+                    id="ipaUrl" 
+                    value={ipaUrl}
+                    onChange={(e) => setIpaUrl(e.target.value)}
+                    placeholder="https://example.com/app.ipa" 
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '12px',
+                      fontSize: '1rem',
+                      background: '#fff',
+                      transition: 'all 0.3s ease',
+                      outline: 'none',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#667eea';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                      e.target.style.transform = 'none';
+                    }}
+                  />
+                  <small style={{
+                    color: '#718096',
+                    marginTop: '8px',
+                    display: 'block'
+                  }}>
+                    Direct link to .ipa file with proper CORS headers
+                  </small>
+                </div>
+              </div>
             </div>
 
             {/* Required Certificates */}
@@ -382,7 +498,7 @@ export default function Index() {
               </h3>
               
               <div style={{ marginBottom: '25px' }}>
-                <Label style={{
+                <label style={{
                   display: 'block',
                   fontWeight: '600',
                   color: '#2d3748',
@@ -390,17 +506,81 @@ export default function Index() {
                   fontSize: '1rem'
                 }}>
                   P12 Certificate (.p12) *
-                </Label>
-                <FileUpload
-                  accept=".p12"
-                  onFilesSelected={setP12Files}
-                  placeholder="Choose or drag & drop P12 certificate"
-                  required
-                />
+                </label>
+                <div style={{ position: 'relative', display: 'block', cursor: 'pointer' }}>
+                  <input 
+                    type="file" 
+                    id="p12File" 
+                    accept=".p12" 
+                    onChange={(e) => handleFileInput(e, 'p12')}
+                    style={{
+                      position: 'absolute',
+                      opacity: '0',
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '20px 24px',
+                      border: p12File ? '2px solid #667eea' : '3px dashed #cbd5e0',
+                      borderRadius: '16px',
+                      background: p12File ? '#eef2ff' : '#f7fafc',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      minHeight: '80px'
+                    }}
+                    onDragEnter={handleDragEvents}
+                    onDragLeave={handleDragEvents}
+                    onDragOver={handleDragEvents}
+                    onDrop={(e) => handleDrop(e, 'p12')}
+                    onMouseEnter={(e) => {
+                      if (!p12File) {
+                        e.currentTarget.style.borderColor = '#667eea';
+                        e.currentTarget.style.background = '#edf2f7';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.15)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!p12File) {
+                        e.currentTarget.style.borderColor = '#cbd5e0';
+                        e.currentTarget.style.background = '#f7fafc';
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                      <svg style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        marginRight: '16px', 
+                        fill: p12File ? '#667eea' : '#718096' 
+                      }} viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                      </svg>
+                      <span className="file-text" style={{
+                        color: p12File ? '#2d3748' : '#718096',
+                        fontSize: '1rem',
+                        fontWeight: p12File ? '600' : '500'
+                      }}>
+                        {p12File ? p12File.name : 'Choose or drag & drop P12 certificate'}
+                      </span>
+                    </div>
+                    <svg style={{ width: '24px', height: '24px', fill: '#a0aec0' }} viewBox="0 0 24 24">
+                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,12L16,16H13.5V19H10.5V16H8L12,12Z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
               
               <div style={{ marginBottom: '25px' }}>
-                <Label style={{
+                <label style={{
                   display: 'block',
                   fontWeight: '600',
                   color: '#2d3748',
@@ -408,17 +588,81 @@ export default function Index() {
                   fontSize: '1rem'
                 }}>
                   Mobile Provision (.mobileprovision) *
-                </Label>
-                <FileUpload
-                  accept=".mobileprovision"
-                  onFilesSelected={setMpFiles}
-                  placeholder="Choose or drag & drop mobile provision"
-                  required
-                />
+                </label>
+                <div style={{ position: 'relative', display: 'block', cursor: 'pointer' }}>
+                  <input 
+                    type="file" 
+                    id="mpFile" 
+                    accept=".mobileprovision" 
+                    onChange={(e) => handleFileInput(e, 'mp')}
+                    style={{
+                      position: 'absolute',
+                      opacity: '0',
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '20px 24px',
+                      border: mpFile ? '2px solid #667eea' : '3px dashed #cbd5e0',
+                      borderRadius: '16px',
+                      background: mpFile ? '#eef2ff' : '#f7fafc',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      minHeight: '80px'
+                    }}
+                    onDragEnter={handleDragEvents}
+                    onDragLeave={handleDragEvents}
+                    onDragOver={handleDragEvents}
+                    onDrop={(e) => handleDrop(e, 'mp')}
+                    onMouseEnter={(e) => {
+                      if (!mpFile) {
+                        e.currentTarget.style.borderColor = '#667eea';
+                        e.currentTarget.style.background = '#edf2f7';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.15)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!mpFile) {
+                        e.currentTarget.style.borderColor = '#cbd5e0';
+                        e.currentTarget.style.background = '#f7fafc';
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                      <svg style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        marginRight: '16px', 
+                        fill: mpFile ? '#667eea' : '#718096' 
+                      }} viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                      </svg>
+                      <span className="file-text" style={{
+                        color: mpFile ? '#2d3748' : '#718096',
+                        fontSize: '1rem',
+                        fontWeight: mpFile ? '600' : '500'
+                      }}>
+                        {mpFile ? mpFile.name : 'Choose or drag & drop mobile provision'}
+                      </span>
+                    </div>
+                    <svg style={{ width: '24px', height: '24px', fill: '#a0aec0' }} viewBox="0 0 24 24">
+                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,12L16,16H13.5V19H10.5V16H8L12,12Z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
               
               <div>
-                <Label htmlFor="password" style={{
+                <label htmlFor="password" style={{
                   display: 'block',
                   fontWeight: '600',
                   color: '#2d3748',
@@ -426,13 +670,13 @@ export default function Index() {
                   fontSize: '1rem'
                 }}>
                   P12 Certificate Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
+                </label>
+                <input 
+                  type="password" 
+                  id="password" 
                   value={p12Password}
                   onChange={(e) => setP12Password(e.target.value)}
-                  placeholder="Enter password if required"
+                  placeholder="Enter password if required" 
                   style={{
                     width: '100%',
                     padding: '14px 18px',
@@ -443,6 +687,16 @@ export default function Index() {
                     transition: 'all 0.3s ease',
                     outline: 'none',
                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#667eea';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                    e.target.style.transform = 'translateY(-1px)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                    e.target.style.transform = 'none';
                   }}
                 />
                 <small style={{
@@ -470,6 +724,16 @@ export default function Index() {
                 transition: 'all 0.3s ease',
                 border: '2px solid #cbd5e0'
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(145deg, #e2e8f0, #cbd5e0)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(145deg, #f1f5f9, #e2e8f0)';
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <span style={{
                 fontWeight: '700',
@@ -482,7 +746,7 @@ export default function Index() {
 
             {/* Advanced Options */}
             {showAdvanced && (
-              <div>
+              <div style={{ display: 'block', animation: 'fadeIn 0.3s ease-in-out' }}>
                 {/* Basic Signing Options */}
                 <div style={{
                   marginBottom: '35px',
@@ -509,9 +773,9 @@ export default function Index() {
                     Basic Signing Options
                   </h3>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                    <div>
-                      <Label htmlFor="bundleId" style={{
+                  <div style={{ marginBottom: '25px' }}>
+                    <div style={{ width: '48%', display: 'inline-block', marginRight: '4%' }}>
+                      <label htmlFor="bundleId" style={{
                         display: 'block',
                         fontWeight: '600',
                         color: '#2d3748',
@@ -519,12 +783,13 @@ export default function Index() {
                         fontSize: '1rem'
                       }}>
                         Bundle ID Override
-                      </Label>
-                      <Input
-                        id="bundleId"
+                      </label>
+                      <input 
+                        type="text" 
+                        id="bundleId" 
                         value={bundleId}
                         onChange={(e) => setBundleId(e.target.value)}
-                        placeholder="com.example.app"
+                        placeholder="com.example.app" 
                         style={{
                           width: '100%',
                           padding: '14px 18px',
@@ -536,10 +801,20 @@ export default function Index() {
                           outline: 'none',
                           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
                         }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                          e.target.style.transform = 'none';
+                        }}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="bundleName" style={{
+                    <div style={{ width: '48%', display: 'inline-block' }}>
+                      <label htmlFor="bundleName" style={{
                         display: 'block',
                         fontWeight: '600',
                         color: '#2d3748',
@@ -547,12 +822,13 @@ export default function Index() {
                         fontSize: '1rem'
                       }}>
                         App Name Override
-                      </Label>
-                      <Input
-                        id="bundleName"
+                      </label>
+                      <input 
+                        type="text" 
+                        id="bundleName" 
                         value={bundleName}
                         onChange={(e) => setBundleName(e.target.value)}
-                        placeholder="My App"
+                        placeholder="My App" 
                         style={{
                           width: '100%',
                           padding: '14px 18px',
@@ -564,13 +840,23 @@ export default function Index() {
                           outline: 'none',
                           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
                         }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                          e.target.style.transform = 'none';
+                        }}
                       />
                     </div>
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <Label htmlFor="bundleVersion" style={{
+                  <div style={{ marginBottom: '25px' }}>
+                    <div style={{ width: '48%', display: 'inline-block', marginRight: '4%' }}>
+                      <label htmlFor="bundleVersion" style={{
                         display: 'block',
                         fontWeight: '600',
                         color: '#2d3748',
@@ -578,12 +864,13 @@ export default function Index() {
                         fontSize: '1rem'
                       }}>
                         Version Override
-                      </Label>
-                      <Input
-                        id="bundleVersion"
+                      </label>
+                      <input 
+                        type="text" 
+                        id="bundleVersion" 
                         value={bundleVersion}
                         onChange={(e) => setBundleVersion(e.target.value)}
-                        placeholder="1.0.0"
+                        placeholder="1.0.0" 
                         style={{
                           width: '100%',
                           padding: '14px 18px',
@@ -595,10 +882,20 @@ export default function Index() {
                           outline: 'none',
                           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
                         }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                          e.target.style.transform = 'none';
+                        }}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="buildVersion" style={{
+                    <div style={{ width: '48%', display: 'inline-block' }}>
+                      <label htmlFor="buildVersion" style={{
                         display: 'block',
                         fontWeight: '600',
                         color: '#2d3748',
@@ -606,12 +903,13 @@ export default function Index() {
                         fontSize: '1rem'
                       }}>
                         Build Version Override
-                      </Label>
-                      <Input
-                        id="buildVersion"
+                      </label>
+                      <input 
+                        type="text" 
+                        id="buildVersion" 
                         value={buildVersion}
                         onChange={(e) => setBuildVersion(e.target.value)}
-                        placeholder="1"
+                        placeholder="1" 
                         style={{
                           width: '100%',
                           padding: '14px 18px',
@@ -622,6 +920,16 @@ export default function Index() {
                           transition: 'all 0.3s ease',
                           outline: 'none',
                           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                          e.target.style.transform = 'none';
                         }}
                       />
                     </div>
@@ -660,155 +968,58 @@ export default function Index() {
                     gap: '20px',
                     marginTop: '15px'
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enable3dTouch" 
-                        checked={enable3dTouch} 
-                        onCheckedChange={setEnable3dTouch}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enable3dTouch" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable 3D Touch
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableAssistiveTouch" 
-                        checked={enableAssistiveTouch} 
-                        onCheckedChange={setEnableAssistiveTouch}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableAssistiveTouch" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable Assistive Touch
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="skipSetup" 
-                        checked={skipSetup} 
-                        onCheckedChange={setSkipSetup}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="skipSetup" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Skip Setup Experience
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="hideRespringLogo" 
-                        checked={hideRespringLogo} 
-                        onCheckedChange={setHideRespringLogo}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="hideRespringLogo" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Hide Respring Logo
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableInternalOptions" 
-                        checked={enableInternalOptions} 
-                        onCheckedChange={setEnableInternalOptions}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableInternalOptions" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable Internal Options
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableInternalStorage" 
-                        checked={enableInternalStorage} 
-                        onCheckedChange={setEnableInternalStorage}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableInternalStorage" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable Internal Storage
-                      </Label>
-                    </div>
+                    {[
+                      { id: 'enable3dTouch', label: 'Enable 3D Touch', checked: enable3dTouch, setter: setEnable3dTouch },
+                      { id: 'enableAssistiveTouch', label: 'Enable Assistive Touch', checked: enableAssistiveTouch, setter: setEnableAssistiveTouch },
+                      { id: 'skipSetup', label: 'Skip Setup Experience', checked: skipSetup, setter: setSkipSetup },
+                      { id: 'hideRespringLogo', label: 'Hide Respring Logo', checked: hideRespringLogo, setter: setHideRespringLogo },
+                      { id: 'enableInternalOptions', label: 'Enable Internal Options', checked: enableInternalOptions, setter: setEnableInternalOptions },
+                      { id: 'enableInternalStorage', label: 'Enable Internal Storage', checked: enableInternalStorage, setter: setEnableInternalStorage }
+                    ].map((option) => (
+                      <div 
+                        key={option.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '12px',
+                          background: '#f8fafc',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#edf2f7';
+                          e.currentTarget.style.borderColor = '#cbd5e0';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                        }}
+                      >
+                        <input 
+                          type="checkbox" 
+                          id={option.id} 
+                          checked={option.checked}
+                          onChange={(e) => option.setter(e.target.checked)}
+                          style={{
+                            marginRight: '12px',
+                            transform: 'scale(1.3)',
+                            accentColor: '#667eea'
+                          }}
+                        />
+                        <label 
+                          htmlFor={option.id} 
+                          style={{
+                            fontWeight: '500',
+                            margin: '0',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem'
+                          }}
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -844,155 +1055,58 @@ export default function Index() {
                     gap: '20px',
                     marginTop: '15px'
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="removeAppRestrictions" 
-                        checked={removeAppRestrictions} 
-                        onCheckedChange={setRemoveAppRestrictions}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="removeAppRestrictions" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Remove App Restrictions
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableFileSharing" 
-                        checked={enableFileSharing} 
-                        onCheckedChange={setEnableFileSharing}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableFileSharing" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable File Sharing
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="disableLibraryValidation" 
-                        checked={disableLibraryValidation} 
-                        onCheckedChange={setDisableLibraryValidation}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="disableLibraryValidation" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Disable Library Validation
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableDebugging" 
-                        checked={enableDebugging} 
-                        onCheckedChange={setEnableDebugging}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableDebugging" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable Debugging
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="enableBackgroundProcessing" 
-                        checked={enableBackgroundProcessing} 
-                        onCheckedChange={setEnableBackgroundProcessing}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="enableBackgroundProcessing" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Enable Background Processing
-                      </Label>
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px',
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <Checkbox 
-                        id="skipSignatureVerification" 
-                        checked={skipSignatureVerification} 
-                        onCheckedChange={setSkipSignatureVerification}
-                        style={{ marginRight: '12px', transform: 'scale(1.3)' }}
-                      />
-                      <Label htmlFor="skipSignatureVerification" style={{
-                        fontWeight: '500',
-                        margin: '0',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem'
-                      }}>
-                        Skip Signature Verification
-                      </Label>
-                    </div>
+                    {[
+                      { id: 'removeAppRestrictions', label: 'Remove App Restrictions', checked: removeAppRestrictions, setter: setRemoveAppRestrictions },
+                      { id: 'enableFileSharing', label: 'Enable File Sharing', checked: enableFileSharing, setter: setEnableFileSharing },
+                      { id: 'disableLibraryValidation', label: 'Disable Library Validation', checked: disableLibraryValidation, setter: setDisableLibraryValidation },
+                      { id: 'enableDebugging', label: 'Enable Debugging', checked: enableDebugging, setter: setEnableDebugging },
+                      { id: 'enableBackgroundProcessing', label: 'Enable Background Processing', checked: enableBackgroundProcessing, setter: setEnableBackgroundProcessing },
+                      { id: 'skipSignatureVerification', label: 'Skip Signature Verification', checked: skipSignatureVerification, setter: setSkipSignatureVerification }
+                    ].map((option) => (
+                      <div 
+                        key={option.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '12px',
+                          background: '#f8fafc',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#edf2f7';
+                          e.currentTarget.style.borderColor = '#cbd5e0';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                        }}
+                      >
+                        <input 
+                          type="checkbox" 
+                          id={option.id} 
+                          checked={option.checked}
+                          onChange={(e) => option.setter(e.target.checked)}
+                          style={{
+                            marginRight: '12px',
+                            transform: 'scale(1.3)',
+                            accentColor: '#667eea'
+                          }}
+                        />
+                        <label 
+                          htmlFor={option.id} 
+                          style={{
+                            fontWeight: '500',
+                            margin: '0',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem'
+                          }}
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1023,7 +1137,7 @@ export default function Index() {
                   </h3>
                   
                   <div>
-                    <Label htmlFor="customEntitlements" style={{
+                    <label htmlFor="customEntitlements" style={{
                       display: 'block',
                       fontWeight: '600',
                       color: '#2d3748',
@@ -1031,9 +1145,9 @@ export default function Index() {
                       fontSize: '1rem'
                     }}>
                       Custom Entitlements (plist XML)
-                    </Label>
-                    <Textarea
-                      id="customEntitlements"
+                    </label>
+                    <textarea 
+                      id="customEntitlements" 
                       value={customEntitlements}
                       onChange={(e) => setCustomEntitlements(e.target.value)}
                       placeholder={`<?xml version="1.0" encoding="UTF-8"?>
@@ -1057,6 +1171,16 @@ export default function Index() {
                         minHeight: '100px',
                         fontFamily: 'Monaco, Menlo, Ubuntu Mono, monospace'
                       }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                        e.target.style.transform = 'translateY(-1px)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+                        e.target.style.transform = 'none';
+                      }}
                     />
                   </div>
                 </div>
@@ -1064,8 +1188,8 @@ export default function Index() {
             )}
 
             {/* Sign Button */}
-            <Button
-              type="submit"
+            <button 
+              type="submit" 
               disabled={!isFormValid()}
               style={{
                 width: '100%',
@@ -1076,28 +1200,35 @@ export default function Index() {
                 borderRadius: '16px',
                 fontSize: '1.2rem',
                 fontWeight: '700',
-                cursor: 'pointer',
+                cursor: isFormValid() ? 'pointer' : 'not-allowed',
                 transition: 'all 0.3s ease',
                 marginTop: '40px',
                 boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                opacity: isFormValid() ? 1 : 0.6
+              }}
+              onMouseEnter={(e) => {
+                if (isFormValid()) {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isFormValid()) {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+                }
               }}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                'Sign IPA File'
-              )}
-            </Button>
+              {isSubmitting ? 'Processing...' : 'Sign IPA File'}
+            </button>
 
             {/* Progress Container */}
             {progress && (
               <div style={{
                 marginTop: '40px',
+                display: 'block',
                 padding: '30px',
                 background: 'linear-gradient(145deg, #f8fafc, #ffffff)',
                 borderRadius: '16px',
@@ -1136,6 +1267,7 @@ export default function Index() {
             {progress?.status === 'completed' && progress.result && (
               <div style={{
                 marginTop: '40px',
+                display: 'block',
                 padding: '30px',
                 background: 'linear-gradient(145deg, #f0fdf4, #dcfce7)',
                 border: '2px solid #bbf7d0',
@@ -1209,8 +1341,17 @@ export default function Index() {
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px'
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#16a34a';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(34, 197, 94, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#22c55e';
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
-                    <Download className="w-4 h-4 mr-2 inline" />
                     Download IPA
                   </a>
                   <a
@@ -1228,24 +1369,20 @@ export default function Index() {
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px'
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#16a34a';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(34, 197, 94, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#22c55e';
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
-                    <Smartphone className="w-4 h-4 mr-2 inline" />
                     Install via Manifest
                   </a>
                 </div>
-                
-                <Button 
-                  onClick={resetForm}
-                  style={{
-                    width: '100%',
-                    marginTop: '20px',
-                    background: 'transparent',
-                    color: '#166534',
-                    border: '2px solid #166534'
-                  }}
-                >
-                  Sign Another App
-                </Button>
               </div>
             )}
 
@@ -1253,6 +1390,7 @@ export default function Index() {
             {error && (
               <div style={{
                 marginTop: '40px',
+                display: 'block',
                 padding: '30px',
                 background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
                 border: '2px solid #fecaca',
