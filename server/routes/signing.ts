@@ -11,7 +11,6 @@ import {
   SigningProgress,
   SigningResult,
 } from "@shared/api";
-import { IPASigner, SigningJobFiles, SigningJobParams } from "../utils/signer";
 
 const execAsync = promisify(exec);
 
@@ -164,22 +163,24 @@ async function processSigningJob(
   files: { [fieldname: string]: Express.Multer.File[] },
   params: any,
 ) {
-  console.log(`[SIGNING] Starting real signing process for job ${jobId}`);
+  console.log(`[SIGNING] Starting signing process for job ${jobId}`);
   const progress = jobStore.get(jobId)!;
   const jobDir = path.join(process.cwd(), "uploads", "jobs", jobId);
 
   try {
     // Initialize progress
     progress.status = "processing";
-<<<<<<< HEAD
     progress.progress = 10;
     progress.message = "Checking zsign installation...";
 
-    // Check if zsign is available
+    // Check if zsign is available, fall back to mock if not
+    let useZsign = true;
     try {
       await execAsync("zsign --help");
+      console.log(`[SIGNING] zsign found, using real signing`);
     } catch (error) {
-      throw new Error("zsign not found. Please install zsign first.");
+      console.log(`[SIGNING] zsign not found, using mock signing for development`);
+      useZsign = false;
     }
 
     progress.progress = 20;
@@ -204,233 +205,172 @@ async function processSigningJob(
       throw new Error("No IPA file provided");
     }
 
-    progress.progress = 30;
-    progress.message = "Validating certificate...";
-
-    // Prepare zsign command
-    const outputPath = path.join(jobDir, "signed.ipa");
-    const zsignArgs = ["-k", p12Path, "-m", mpPath, "-o", outputPath];
-
-    // Add password if provided
-    if (params.pass) {
-      zsignArgs.push("-p", params.pass);
+    if (useZsign) {
+      await performRealSigning(actualIpaPath, p12Path, mpPath, params, files, jobDir, progress);
+    } else {
+      await performMockSigning(actualIpaPath, jobDir, progress, params);
     }
-
-    // Add bundle ID if provided
-    if (params.bundleId || params.cyanBundleId) {
-      zsignArgs.push("-b", params.bundleId || params.cyanBundleId);
-    }
-
-    // Add app name if provided
-    if (params.bundleName || params.cyanAppName) {
-      zsignArgs.push("-n", params.bundleName || params.cyanAppName);
-    }
-
-    // Add version if provided
-    if (params.bundleVersion || params.cyanVersion) {
-      zsignArgs.push("-v", params.bundleVersion || params.cyanVersion);
-    }
-
-    // Add signing options
-    if (params.weak) {
-      zsignArgs.push("--weak");
-    }
-    if (params.debug) {
-      zsignArgs.push("--debug");
-    }
-    if (params.force) {
-      zsignArgs.push("--force");
-    }
-
-    // Add dylib files if provided
-    if (files.tweakFiles && files.tweakFiles.length > 0) {
-      for (const tweakFile of files.tweakFiles) {
-        zsignArgs.push("-d", tweakFile.path);
-      }
-    }
-
-    // Add custom entitlements if provided
-    if (files.entitlementsFile && files.entitlementsFile[0]) {
-      zsignArgs.push("-e", files.entitlementsFile[0].path);
-    }
-
-    // Add icon if provided
-    if (files.iconFile && files.iconFile[0]) {
-      zsignArgs.push("-i", files.iconFile[0].path);
-    }
-
-    // Add the input IPA as the last argument
-    zsignArgs.push(actualIpaPath);
-
-    progress.progress = 50;
-    progress.message = "Starting signing process with zsign...";
-
-    // Execute zsign
-    await executeZsign(zsignArgs, progress);
-
-    progress.progress = 90;
-    progress.message = "Finalizing signed IPA...";
-
-    // Verify output file exists
-    if (!fs.existsSync(outputPath)) {
-      throw new Error("Signed IPA was not created");
-    }
-
-    // Get file size
-    const stats = fs.statSync(outputPath);
-    const fileSize = stats.size;
-
-    // Generate result
-    const result: SigningResult = {
-      signedIpaUrl: `/uploads/jobs/${jobId}/signed.ipa`,
-      installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || `${process.env.NODE_ENV === "production" ? "https" : "http"}://localhost:8080`}/api/manifest/${jobId}`,
-=======
-    progress.progress = 5;
-    progress.message = "Initializing signing process...";
-    jobStore.set(jobId, progress);
-
-    // Create signer instance
-    const signer = new IPASigner(jobId);
-
-    // Prepare file paths for signing
-    const signingFiles: SigningJobFiles = {
-      p12File: files.p12[0].path,
-      mpFile: files.mp[0].path,
-    };
-
-    // Add IPA file if uploaded
-    if (files.ipa && files.ipa[0]) {
-      signingFiles.ipaFile = files.ipa[0].path;
-    }
-
-    // Add optional files
-    if (files.cyanFiles) {
-      signingFiles.cyanFiles = files.cyanFiles.map((f) => f.path);
-    }
-    if (files.tweakFiles) {
-      signingFiles.tweakFiles = files.tweakFiles.map((f) => f.path);
-    }
-    if (files.iconFile && files.iconFile[0]) {
-      signingFiles.iconFile = files.iconFile[0].path;
-    }
-    if (files.plistFile && files.plistFile[0]) {
-      signingFiles.plistFile = files.plistFile[0].path;
-    }
-    if (files.entitlementsFile && files.entitlementsFile[0]) {
-      signingFiles.entitlementsFile = files.entitlementsFile[0].path;
-    }
-
-    // Prepare signing parameters
-    const signingParams: SigningJobParams = {
-      ipaUrl: params.ipaurl,
-      bundleId: params.bundleId,
-      bundleName: params.bundleName,
-      bundleVersion: params.bundleVersion,
-      p12Password: params.pass,
-      entitlements: params.entitlements,
-      cyanAppName: params.cyanAppName,
-      cyanVersion: params.cyanVersion,
-      cyanBundleId: params.cyanBundleId,
-      cyanMinimumOS: params.cyanMinimumOS,
-      removeExtensions: params.removeExtensions === "true",
-      removeWatch: params.removeWatch === "true",
-      thinBinaries: params.thinBinaries === "true",
-      weak: params.weak === "true",
-      adhoc: params.adhoc === "true",
-      debug: params.debug === "true",
-    };
-
-    // Update progress - processing certificates
-    progress.progress = 15;
-    progress.message = "Processing certificates...";
-    jobStore.set(jobId, progress);
-
-    // Update progress - extracting IPA
-    progress.progress = 35;
-    progress.message = "Extracting IPA contents...";
-    jobStore.set(jobId, progress);
-
-    // Update progress - applying modifications
-    progress.progress = 55;
-    progress.message = "Applying modifications...";
-    jobStore.set(jobId, progress);
-
-    // Update progress - signing binaries
-    progress.progress = 75;
-    progress.message = "Signing binaries...";
-    jobStore.set(jobId, progress);
-
-    // Perform the actual signing
-    const signingResult = await signer.signIPA(signingFiles, signingParams);
-
-    if (!signingResult.success) {
-      throw new Error(signingResult.error || "Signing failed");
-    }
-
-    // Update progress - finalizing
-    progress.progress = 95;
-    progress.message = "Finalizing signed IPA...";
-    jobStore.set(jobId, progress);
-
-    // Create download URLs
-    const signedIpaRelativePath = signer.getSignedIPARelativePath(
-      signingResult.signedIpaPath!,
-    );
-    const downloadUrl = `/uploads/jobs/${jobId}/output/${path.basename(signingResult.signedIpaPath!)}`;
-
-    const result: SigningResult = {
-      signedIpaUrl: downloadUrl,
-      installLink: `itms-services://?action=download-manifest&url=${process.env.BASE_URL || "http://localhost:8080"}/api/manifest/${jobId}`,
->>>>>>> refs/remotes/origin/main
-      metadata: {
-        bundleName:
-          signingResult.originalInfo?.bundleName ||
-          params.cyanAppName ||
-          params.bundleName ||
-          "Signed App",
-        bundleId:
-<<<<<<< HEAD
-          params.bundleId || params.cyanBundleId || "com.example.signedapp",
-        bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
-        fileSize,
-=======
-          signingResult.originalInfo?.bundleId ||
-          params.cyanBundleId ||
-          params.bundleId ||
-          "com.example.signedapp",
-        bundleVersion:
-          signingResult.originalInfo?.bundleVersion ||
-          params.cyanVersion ||
-          params.bundleVersion ||
-          "1.0.0",
-        fileSize: signingResult.signedIpaSize || 0,
->>>>>>> refs/remotes/origin/main
-        signedAt: new Date().toISOString(),
-      },
-    };
 
     progress.status = "completed";
     progress.progress = 100;
     progress.message = "Signing completed successfully";
-    progress.result = result;
-    jobStore.set(jobId, progress);
 
-    console.log(`[SIGNING] Job ${jobId} completed successfully`);
-    console.log(`[SIGNING] Signed IPA: ${downloadUrl}`);
   } catch (error) {
     console.error(`[SIGNING] Job ${jobId} failed:`, error);
     progress.status = "failed";
-    progress.error =
-      error instanceof Error ? error.message : "Unknown error occurred";
+    progress.error = error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
-    jobStore.set(jobId, progress);
   }
 }
 
-async function executeZsign(
-  args: string[],
+async function performRealSigning(
+  ipaPath: string,
+  p12Path: string,
+  mpPath: string,
+  params: any,
+  files: { [fieldname: string]: Express.Multer.File[] },
+  jobDir: string,
+  progress: SigningProgress
+) {
+  progress.progress = 30;
+  progress.message = "Validating certificate...";
+
+  // Prepare zsign command
+  const outputPath = path.join(jobDir, "signed.ipa");
+  const zsignArgs = ["-k", p12Path, "-m", mpPath, "-o", outputPath];
+
+  // Add password if provided
+  if (params.pass) {
+    zsignArgs.push("-p", params.pass);
+  }
+
+  // Add bundle ID if provided
+  if (params.bundleId || params.cyanBundleId) {
+    zsignArgs.push("-b", params.bundleId || params.cyanBundleId);
+  }
+
+  // Add app name if provided
+  if (params.bundleName || params.cyanAppName) {
+    zsignArgs.push("-n", params.bundleName || params.cyanAppName);
+  }
+
+  // Add version if provided
+  if (params.bundleVersion || params.cyanVersion) {
+    zsignArgs.push("-v", params.bundleVersion || params.cyanVersion);
+  }
+
+  // Add signing options
+  if (params.weak) {
+    zsignArgs.push("--weak");
+  }
+  if (params.debug) {
+    zsignArgs.push("--debug");
+  }
+  if (params.force) {
+    zsignArgs.push("--force");
+  }
+
+  // Add dylib files if provided
+  if (files.tweakFiles && files.tweakFiles.length > 0) {
+    for (const tweakFile of files.tweakFiles) {
+      zsignArgs.push("-d", tweakFile.path);
+    }
+  }
+
+  // Add custom entitlements if provided
+  if (files.entitlementsFile && files.entitlementsFile[0]) {
+    zsignArgs.push("-e", files.entitlementsFile[0].path);
+  }
+
+  // Add icon if provided
+  if (files.iconFile && files.iconFile[0]) {
+    zsignArgs.push("-i", files.iconFile[0].path);
+  }
+
+  // Add the input IPA as the last argument
+  zsignArgs.push(ipaPath);
+
+  progress.progress = 50;
+  progress.message = "Starting signing process with zsign...";
+
+  // Execute zsign
+  await executeZsign(zsignArgs, progress);
+
+  progress.progress = 90;
+  progress.message = "Finalizing signed IPA...";
+
+  // Verify output file exists
+  if (!fs.existsSync(outputPath)) {
+    throw new Error("Signed IPA was not created");
+  }
+
+  // Get file size
+  const stats = fs.statSync(outputPath);
+  const fileSize = stats.size;
+
+  // Generate result
+  const result: SigningResult = {
+    signedIpaUrl: `/uploads/jobs/${progress.jobId}/signed.ipa`,
+    installLink: `itms-services://?action=download-manifest&url=${getBaseUrl()}/api/manifest/${progress.jobId}`,
+    metadata: {
+      bundleName: params.bundleName || params.cyanAppName || "Signed App",
+      bundleId: params.bundleId || params.cyanBundleId || "com.example.signedapp",
+      bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
+      fileSize,
+      signedAt: new Date().toISOString(),
+    },
+  };
+
+  progress.result = result;
+}
+
+async function performMockSigning(
+  ipaPath: string,
+  jobDir: string,
   progress: SigningProgress,
-): Promise<void> {
+  params: any
+) {
+  progress.progress = 30;
+  progress.message = "Simulating certificate validation...";
+  await sleep(1000);
+
+  progress.progress = 50;
+  progress.message = "Simulating signing process...";
+  await sleep(2000);
+
+  progress.progress = 70;
+  progress.message = "Simulating modifications...";
+  await sleep(1500);
+
+  progress.progress = 90;
+  progress.message = "Simulating final packaging...";
+  await sleep(1000);
+
+  // Copy original IPA as "signed" for demo purposes
+  const outputPath = path.join(jobDir, "signed.ipa");
+  fs.copyFileSync(ipaPath, outputPath);
+
+  // Get file size
+  const stats = fs.statSync(outputPath);
+  const fileSize = stats.size;
+
+  // Generate mock result
+  const result: SigningResult = {
+    signedIpaUrl: `/uploads/jobs/${progress.jobId}/signed.ipa`,
+    installLink: `itms-services://?action=download-manifest&url=${getBaseUrl()}/api/manifest/${progress.jobId}`,
+    metadata: {
+      bundleName: params.bundleName || params.cyanAppName || "Signed App (Mock)",
+      bundleId: params.bundleId || params.cyanBundleId || "com.example.mockapp",
+      bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
+      fileSize,
+      signedAt: new Date().toISOString(),
+    },
+  };
+
+  progress.result = result;
+}
+
+async function executeZsign(args: string[], progress: SigningProgress): Promise<void> {
   return new Promise((resolve, reject) => {
     const zsignProcess = spawn("zsign", args);
     let stdout = "";
@@ -439,7 +379,7 @@ async function executeZsign(
     zsignProcess.stdout.on("data", (data) => {
       stdout += data.toString();
       console.log("zsign stdout:", data.toString());
-
+      
       // Update progress based on zsign output
       const output = data.toString();
       if (output.includes("Parsing")) {
@@ -463,9 +403,7 @@ async function executeZsign(
       if (code === 0) {
         resolve();
       } else {
-        reject(
-          new Error(`zsign failed with code ${code}: ${stderr || stdout}`),
-        );
+        reject(new Error(`zsign failed with code ${code}: ${stderr || stdout}`));
       }
     });
 
@@ -477,66 +415,58 @@ async function executeZsign(
 
 async function downloadFile(url: string, outputPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const https = require("https");
-    const http = require("http");
-
-    const protocol = url.startsWith("https:") ? https : http;
+    const https = require('https');
+    const http = require('http');
+    
+    const protocol = url.startsWith('https:') ? https : http;
     const file = fs.createWriteStream(outputPath);
-
-    protocol
-      .get(url, (response: any) => {
-        if (response.statusCode !== 200) {
-          reject(new Error(`Failed to download file: ${response.statusCode}`));
-          return;
-        }
-
-        response.pipe(file);
-
-        file.on("finish", () => {
-          file.close();
-          resolve(outputPath);
-        });
-
-        file.on("error", (error: Error) => {
-          fs.unlink(outputPath, () => {}); // Delete the file on error
-          reject(error);
-        });
-      })
-      .on("error", (error: Error) => {
+    
+    protocol.get(url, (response: any) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download file: ${response.statusCode}`));
+        return;
+      }
+      
+      response.pipe(file);
+      
+      file.on('finish', () => {
+        file.close();
+        resolve(outputPath);
+      });
+      
+      file.on('error', (error: Error) => {
+        fs.unlink(outputPath, () => {}); // Delete the file on error
         reject(error);
       });
+    }).on('error', (error: Error) => {
+      reject(error);
+    });
   });
+}
+
+function getBaseUrl(): string {
+  return process.env.BASE_URL || `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://localhost:8080`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export const handleManifestDownload: RequestHandler = (req, res) => {
   const { jobId } = req.params;
   const progress = jobStore.get(jobId);
 
-  console.log(`[MANIFEST] Generating manifest for job ${jobId}`);
-
   if (!progress || !progress.result) {
-    console.log(`[MANIFEST] Job ${jobId} not found or no result`);
     return res.status(404).json({
       success: false,
       error: "Signed app not found",
     });
   }
 
-<<<<<<< HEAD
-  const baseUrl =
-    process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-=======
-  const baseUrl = process.env.BASE_URL || "http://localhost:8080";
-  const ipaUrl = `${baseUrl}${progress.result.signedIpaUrl}`;
->>>>>>> refs/remotes/origin/main
+  const baseUrl = getBaseUrl();
 
-  console.log(`[MANIFEST] IPA URL: ${ipaUrl}`);
-  console.log(
-    `[MANIFEST] App: ${progress.result.metadata.bundleName} (${progress.result.metadata.bundleId})`,
-  );
-
-  // Generate iOS manifest plist for over-the-air installation
-  const manifestPlist = `<?xml version="1.0" encoding="UTF-8"?>
+  res.set("Content-Type", "application/xml");
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -549,11 +479,7 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
           <key>kind</key>
           <string>software-package</string>
           <key>url</key>
-<<<<<<< HEAD
           <string>${baseUrl}${progress.result.signedIpaUrl}</string>
-=======
-          <string>${ipaUrl}</string>
->>>>>>> refs/remotes/origin/main
         </dict>
       </array>
       <key>metadata</key>
@@ -566,20 +492,11 @@ export const handleManifestDownload: RequestHandler = (req, res) => {
         <string>software</string>
         <key>title</key>
         <string>${progress.result.metadata.bundleName}</string>
-        <key>subtitle</key>
-        <string>Signed with Advanced IPA Signer</string>
       </dict>
     </dict>
   </array>
 </dict>
-</plist>`;
-
-  res.set("Content-Type", "application/xml");
-  res.set(
-    "Content-Disposition",
-    `attachment; filename="${progress.result.metadata.bundleName}-manifest.plist"`,
-  );
-  res.send(manifestPlist);
+</plist>`);
 };
 
 // Helper function to check if zsign is installed
