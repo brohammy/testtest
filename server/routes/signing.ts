@@ -179,7 +179,9 @@ async function processSigningJob(
       await execAsync("zsign --help");
       console.log(`[SIGNING] zsign found, using real signing`);
     } catch (error) {
-      console.log(`[SIGNING] zsign not found, using mock signing for development`);
+      console.log(
+        `[SIGNING] zsign not found, using mock signing for development`,
+      );
       useZsign = false;
     }
 
@@ -206,7 +208,15 @@ async function processSigningJob(
     }
 
     if (useZsign) {
-      await performRealSigning(actualIpaPath, p12Path, mpPath, params, files, jobDir, progress);
+      await performRealSigning(
+        actualIpaPath,
+        p12Path,
+        mpPath,
+        params,
+        files,
+        jobDir,
+        progress,
+      );
     } else {
       await performMockSigning(actualIpaPath, jobDir, progress, params);
     }
@@ -214,11 +224,11 @@ async function processSigningJob(
     progress.status = "completed";
     progress.progress = 100;
     progress.message = "Signing completed successfully";
-
   } catch (error) {
     console.error(`[SIGNING] Job ${jobId} failed:`, error);
     progress.status = "failed";
-    progress.error = error instanceof Error ? error.message : "Unknown error occurred";
+    progress.error =
+      error instanceof Error ? error.message : "Unknown error occurred";
     progress.message = "Signing failed";
   }
 }
@@ -230,7 +240,7 @@ async function performRealSigning(
   params: any,
   files: { [fieldname: string]: Express.Multer.File[] },
   jobDir: string,
-  progress: SigningProgress
+  progress: SigningProgress,
 ) {
   progress.progress = 30;
   progress.message = "Validating certificate...";
@@ -314,7 +324,8 @@ async function performRealSigning(
     installLink: `itms-services://?action=download-manifest&url=${getBaseUrl()}/api/manifest/${progress.jobId}`,
     metadata: {
       bundleName: params.bundleName || params.cyanAppName || "Signed App",
-      bundleId: params.bundleId || params.cyanBundleId || "com.example.signedapp",
+      bundleId:
+        params.bundleId || params.cyanBundleId || "com.example.signedapp",
       bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
       fileSize,
       signedAt: new Date().toISOString(),
@@ -328,7 +339,7 @@ async function performMockSigning(
   ipaPath: string,
   jobDir: string,
   progress: SigningProgress,
-  params: any
+  params: any,
 ) {
   progress.progress = 30;
   progress.message = "Simulating certificate validation...";
@@ -359,7 +370,8 @@ async function performMockSigning(
     signedIpaUrl: `/uploads/jobs/${progress.jobId}/signed.ipa`,
     installLink: `itms-services://?action=download-manifest&url=${getBaseUrl()}/api/manifest/${progress.jobId}`,
     metadata: {
-      bundleName: params.bundleName || params.cyanAppName || "Signed App (Mock)",
+      bundleName:
+        params.bundleName || params.cyanAppName || "Signed App (Mock)",
       bundleId: params.bundleId || params.cyanBundleId || "com.example.mockapp",
       bundleVersion: params.bundleVersion || params.cyanVersion || "1.0.0",
       fileSize,
@@ -370,7 +382,10 @@ async function performMockSigning(
   progress.result = result;
 }
 
-async function executeZsign(args: string[], progress: SigningProgress): Promise<void> {
+async function executeZsign(
+  args: string[],
+  progress: SigningProgress,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const zsignProcess = spawn("zsign", args);
     let stdout = "";
@@ -379,7 +394,7 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
     zsignProcess.stdout.on("data", (data) => {
       stdout += data.toString();
       console.log("zsign stdout:", data.toString());
-      
+
       // Update progress based on zsign output
       const output = data.toString();
       if (output.includes("Parsing")) {
@@ -403,7 +418,9 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`zsign failed with code ${code}: ${stderr || stdout}`));
+        reject(
+          new Error(`zsign failed with code ${code}: ${stderr || stdout}`),
+        );
       }
     });
 
@@ -415,41 +432,46 @@ async function executeZsign(args: string[], progress: SigningProgress): Promise<
 
 async function downloadFile(url: string, outputPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const https = require('https');
-    const http = require('http');
-    
-    const protocol = url.startsWith('https:') ? https : http;
+    const https = require("https");
+    const http = require("http");
+
+    const protocol = url.startsWith("https:") ? https : http;
     const file = fs.createWriteStream(outputPath);
-    
-    protocol.get(url, (response: any) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download file: ${response.statusCode}`));
-        return;
-      }
-      
-      response.pipe(file);
-      
-      file.on('finish', () => {
-        file.close();
-        resolve(outputPath);
-      });
-      
-      file.on('error', (error: Error) => {
-        fs.unlink(outputPath, () => {}); // Delete the file on error
+
+    protocol
+      .get(url, (response: any) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download file: ${response.statusCode}`));
+          return;
+        }
+
+        response.pipe(file);
+
+        file.on("finish", () => {
+          file.close();
+          resolve(outputPath);
+        });
+
+        file.on("error", (error: Error) => {
+          fs.unlink(outputPath, () => {}); // Delete the file on error
+          reject(error);
+        });
+      })
+      .on("error", (error: Error) => {
         reject(error);
       });
-    }).on('error', (error: Error) => {
-      reject(error);
-    });
   });
 }
 
 function getBaseUrl(): string {
-  return process.env.BASE_URL || `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://localhost:8080`;
+  return (
+    process.env.BASE_URL ||
+    `${process.env.NODE_ENV === "production" ? "https" : "http"}://localhost:8080`
+  );
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export const handleManifestDownload: RequestHandler = (req, res) => {

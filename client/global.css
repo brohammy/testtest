@@ -109,17 +109,17 @@
   .gradient-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  
+
   .gradient-secondary {
     background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
   }
-  
+
   .glass-card {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
-  
+
   .form-section {
     background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
     border: 2px solid #e2e8f0;
@@ -127,12 +127,12 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
   }
-  
+
   .form-section:hover {
     border-color: #cbd5e0;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
-  
+
   .form-input {
     border: 2px solid #e2e8f0;
     border-radius: 12px;
@@ -140,45 +140,45 @@
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   }
-  
+
   .form-input:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     transform: translateY(-1px);
   }
-  
+
   .file-upload-area {
     border: 3px dashed #cbd5e0;
     border-radius: 16px;
     background: #f7fafc;
     transition: all 0.3s ease;
   }
-  
+
   .file-upload-area:hover {
     border-color: #667eea;
     background: #edf2f7;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
   }
-  
+
   .checkbox-item {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     transition: all 0.3s ease;
   }
-  
+
   .checkbox-item:hover {
     background: #edf2f7;
     border-color: #cbd5e0;
   }
-  
+
   .progress-bar {
     background: #e2e8f0;
     border-radius: 6px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-  
+
   .progress-fill {
     background: linear-gradient(90deg, #667eea, #764ba2);
     border-radius: 6px;
