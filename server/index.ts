@@ -21,6 +21,7 @@ import {
   handleSigningCancel,
   handleManifestDownload,
   uploadSigningFiles,
+  checkZsignInstallation,
 } from "./routes/signing";
 
 export function createServer() {
